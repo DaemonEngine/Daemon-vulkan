@@ -154,6 +154,8 @@ constexpr TaskRing& TaskList::TaskRingIDToTaskRing( const TaskRingID taskRingID 
 	}
 }
 
+/* You must use taskRing.UnlockQueue( IDToTaskQueue( task.id ) ) to unlock the queue after using this function!
+This is required to avoid race conditions because some of the code calling AddToTaskRing() further modifies the task */
 uint16_t TaskList::AddToTaskRing( TaskRing& taskRing, Task& task ) {
 	uint8_t queue;
 	while ( true ) {
@@ -171,8 +173,6 @@ uint16_t TaskList::AddToTaskRing( TaskRing& taskRing, Task& task ) {
 
 	SetBit( &taskRing.queues[queue].availableTasks, taskSlot );
 	taskRing.queues[queue].tasks[taskSlot] = task.bufferID;
-
-	// taskRing.UnlockQueue( queue );
 
 	return taskRing.id | ( queue << TASK_SHIFT_QUEUE ) | ( taskSlot << TASK_SHIFT_ID ) | ( 1 << TASK_SHIFT_ALLOCATED );
 }
