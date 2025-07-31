@@ -69,8 +69,61 @@ struct TaskRing {
 	void RemoveTask( const uint8_t queue, const uint8_t id );
 };
 
-using TaskInit = std::initializer_list<TaskProxy>;
+#include "../Memory/Array.h"
+// using TaskInit = Array<const TaskProxy, Task::MAX_FORWARD_TASKS>;
+using TaskArray = Array<TaskProxy, Task::MAX_FORWARD_TASKS>;
 #define AddTasks( ... ) AddTasksExt( { __VA_ARGS__ } )
+
+struct TaskInit {
+	TaskArray& tasks;
+
+	TaskInit( const TaskInit& other ) :
+		tasks( other.tasks ) {
+	}
+
+	TaskInit( TaskArray newTasks ) :
+		tasks( newTasks ) {
+	}
+
+	friend void swap( TaskInit lhs, TaskInit rhs ) {
+		std::swap( lhs.tasks, rhs.tasks );
+	}
+
+	operator TaskArray()&& {
+		return { std::move( tasks ) };
+	}
+
+	TaskInit& operator=( TaskArray&& newTasks ) {
+		tasks = std::move( newTasks );
+		return *this;
+	}
+
+	TaskInit& operator=( const TaskInit&& newTasks ) {
+		tasks = std::move( newTasks.tasks );
+		return *this;
+	}
+};
+
+bool operator<( const TaskArray& lhs, const TaskArray& rhs );
+bool operator<( const TaskInit& lhs, const TaskArray& rhs );
+bool operator<( const TaskArray& lhs, const TaskInit& rhs );
+bool operator<( const TaskInit& lhs, const TaskInit& rhs );
+
+/* bool operator<( const TaskInit& lhs, const TaskInit& rhs ) {
+	const bool LHSMainInRHS =
+		std::find_if( rhs.tasks.begin(), rhs.tasks.end(),
+			[&]( const TaskProxy& task ) {
+				return &task.task == &lhs.tasks.begin()[0].task;
+			}
+		) != rhs.tasks.end();
+
+	const bool RHSMainInLHS =
+		std::find_if( lhs.tasks.begin(), lhs.tasks.end(),
+			[&]( const TaskProxy& task ) {
+				return &task.task == &rhs.tasks.begin()[0].task;
+			}
+		) != lhs.tasks.end();
+} */
 
 template<typename T>
 concept IsTask = requires ( T value ) {

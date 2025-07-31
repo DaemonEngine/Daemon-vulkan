@@ -74,6 +74,14 @@ struct IteratorSeq {
 	friend constexpr bool operator!=( const IteratorSeq& lhs, const IteratorSeq& rhs ) {
 		return lhs.ptr != rhs.ptr;
 	}
+
+	constexpr bool operator==( const IteratorSeq* other ) {
+		return ptr == other->ptr;
+	}
+
+	constexpr bool operator!=( const IteratorSeq* other ) {
+		return ptr != other->ptr;
+	}
 };
 
 #endif // ITERATOR_SEQ_H

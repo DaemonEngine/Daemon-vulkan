@@ -262,15 +262,89 @@ void TaskList::AddTask( Task& task, std::initializer_list<Task> dependencies ) {
 }
 
 void TaskList::AddTasksExt( std::initializer_list<TaskInit> dependencies ) {
+
+	// std::sort( dependencies.begin(), dependencies.end() );
 	for ( const TaskInit& taskInit : dependencies ) {
-		for ( const TaskProxy* task = &taskInit.begin()[1]; task < taskInit.end(); task++ ) {
+		/* for ( const TaskProxy* task = &taskInit.memory[1]; task < &taskInit.memory[taskInit.size]; task++ ) {
 			if ( !AddedToTaskRing( task->task.id ) ) {
 				AddTask( task->task );
 			}
-		}
-		AddTask( taskInit.begin()[0].task, TaskInitList{ &taskInit.begin()[1], taskInit.end() } );
+		} */
+		AddTask( *taskInit.tasks.memory[0].task, TaskInitList{ &taskInit.tasks.memory[1], &taskInit.tasks.memory[taskInit.tasks.size] } );
 	}
 }
+
+bool operator<( const TaskArray& lhs, const TaskArray& rhs ) {
+	const bool LHSMainInRHS =
+		std::find_if( rhs.begin(), rhs.end(),
+			[&]( TaskProxy& task ) {
+				return &task.task == &lhs.memory[0].task;
+			}
+		) != rhs.end();
+
+	const bool RHSMainInLHS =
+		std::find_if( lhs.begin(), lhs.end(),
+			[&]( TaskProxy& task ) {
+				return &task.task == &rhs.memory[0].task;
+			}
+		) != lhs.end();
+
+	if ( LHSMainInRHS && RHSMainInLHS ) {
+		Sys::Drop( "Circular task dependency" );
+	}
+
+	if ( LHSMainInRHS ) {
+		return true;
+	}
+
+	if ( RHSMainInLHS ) {
+		return false;
+	}
+
+	return &lhs.memory[0].task < &rhs.memory[0].task;
+}
+
+bool operator<( const TaskInit& lhs, const TaskInit& rhs ) {
+	const bool LHSMainInRHS =
+		std::find_if( rhs.tasks.begin(), rhs.tasks.end(),
+			[&]( const TaskProxy& task ) {
+				return &task.task == &lhs.tasks.memory[0].task;
+			}
+		) != rhs.tasks.end();
+
+	const bool RHSMainInLHS =
+		std::find_if( lhs.tasks.begin(), lhs.tasks.end(),
+			[&]( const TaskProxy& task ) {
+				return &task.task == &rhs.tasks.memory[0].task;
+			}
+		) != lhs.tasks.end();
+
+	if ( LHSMainInRHS && RHSMainInLHS ) {
+		Sys::Drop( "Circular task dependency" );
+	}
+
+	if ( LHSMainInRHS ) {
+		return true;
+	}
+
+	if ( RHSMainInLHS ) {
+		return false;
+	}
+
+	return &lhs.tasks.memory[0].task < &rhs.tasks.memory[0].task;
+}
+
+/* bool operator<( const TaskInit& lhs, const std::initializer_list<TaskProxy>& rhs ) {
+	return lhs.tasks < rhs;
+}
+
+bool operator<( const std::initializer_list<TaskProxy>& lhs, const TaskInit& rhs ) {
+	return lhs < rhs.tasks;
+}
+
+bool operator<( const TaskInit& lhs, const TaskInit& rhs ) {
+	return lhs.tasks < rhs.tasks;
+} */
 
 Task* TaskList::FetchTask( Thread* thread, const bool longestTask ) {
 	Log::DebugTag( "Thread %u fetching", thread->id );

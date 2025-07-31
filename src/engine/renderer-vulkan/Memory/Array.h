@@ -45,10 +45,34 @@ struct Array {
 	const uint64_t size = newSize;
     T memory[newSize];
 
+	constexpr Array() {}
+
 	constexpr Array( std::initializer_list<T> args ) {
 		for ( uint64_t i = 0; i < args.size(); i++ ) {
 			memory[i] = args.begin()[i];
-		}
+		} 
+	}
+
+	constexpr Array( const Array& other ) {
+		memcpy( memory, other.memory, size * sizeof( T ) );
+	}
+
+	friend void swap( Array lhs, Array rhs) {
+		std::swap( lhs.memory, rhs.memory );
+	}
+
+	/* operator T()&& {
+		return Array{ { memory } };
+	} */
+
+	Array& operator=( T&& newMemory ) {
+		memmove( memory, &newMemory, size * sizeof( T ) );
+		return *this;
+	}
+
+	Array& operator=( const Array&& newArray ) {
+		memmove( memory, newArray.memory, size * sizeof( T ) );
+		return *this;
 	}
 
 	constexpr uint64_t Size() {
@@ -59,13 +83,21 @@ struct Array {
 		return memory[index];
 	}
 
-	constexpr IteratorSeq<T> begin() {
+	constexpr IteratorSeq<T> begin() const {
 		return IteratorSeq<T>{ &memory[0] };
 	}
 
-	constexpr IteratorSeq<T> end() {
+	constexpr IteratorSeq<T> end() const {
 		return IteratorSeq<T>{ &memory[size] };
 	}
+
+	/* constexpr const IteratorSeq<const T> begin() const {
+		return IteratorSeq<const T>{ memory[0] };
+	}
+
+	constexpr const IteratorSeq<const T> end() const {
+		return IteratorSeq<const T>{ &memory[size] };
+	} */
 };
 
 template<typename T>

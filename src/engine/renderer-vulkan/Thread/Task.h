@@ -87,14 +87,29 @@ struct Task {
 };
 
 struct TaskProxy {
-	Task& task;
+	Task* task = nullptr;
+
+	TaskProxy() {}
 
 	TaskProxy( Task& newTask ) :
-		task( newTask ) {
+		task( &newTask ) {
 	}
 
 	Task* operator->() const {
-		return &task;
+		return task;
+	}
+
+	TaskProxy& operator=( const TaskProxy& other ) {
+		task = std::move( other.task );
+		return *this;
+	}
+
+	bool operator==( const TaskProxy& other ) const {
+		return &task == &other.task;
+	}
+
+	bool operator!=( const TaskProxy& other ) const {
+		return !( *this == other );
 	}
 };
 
