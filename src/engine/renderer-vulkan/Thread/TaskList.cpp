@@ -94,24 +94,24 @@ void TaskList::FinishShutdown() {
 uint8_t TaskRing::LockQueueForTask( Task* task ) {
 	Q_UNUSED( task );
 
-	uint64_t expected = queueLocks.load();
+	uint64_t expected = queueLocks.load( std::memory_order_acquire );
 	uint64_t desired;
 	uint8_t queue;
 	do {
 		// TODO: Use projected task time or a uniform distribution to select a queue
 		queue = rand() % 63;
 		desired = SetBit( expected, queue );
-	} while ( !queueLocks.compare_exchange_weak( expected, desired, std::memory_order_relaxed ) );
+	} while ( !queueLocks.compare_exchange_weak( expected, desired, std::memory_order_acq_rel ) );
 
 	return queue;
 }
 
 void TaskRing::LockQueue( const uint8_t queue ) {
-	uint64_t expected = queueLocks.load();
+	uint64_t expected = queueLocks.load( std::memory_order_acquire );
 	uint64_t desired;
 	do {
 		desired = SetBit( expected, queue );
-	} while ( !queueLocks.compare_exchange_weak( expected, desired, std::memory_order_relaxed ) );
+	} while ( !queueLocks.compare_exchange_weak( expected, desired, std::memory_order_acq_rel ) );
 }
 
 void TaskRing::UnlockQueue( const uint8_t queue ) {
@@ -120,6 +120,10 @@ void TaskRing::UnlockQueue( const uint8_t queue ) {
 
 void TaskRing::RemoveTask( const uint8_t queue, const uint8_t id ) {
 	LockQueue( queue );
+
+	if ( !BitSet( queues[queue].availableTasks, id ) ) {
+		Log::Warn( "" );
+	}
 
 	UnSetBit( &queues[queue].availableTasks, id );
 	queues[queue].tasks[id] = 0;
@@ -194,7 +198,7 @@ void TaskList::MoveToTaskRing( TaskRing& taskRing, Task& task ) {
 void TaskList::FinishDependency( const uint16_t bufferID ) {
 	Task& task = tasks.memory[bufferID];
 
-	const uint32_t counter = task.dependencyCounter--;
+	const uint32_t counter = task.dependencyCounter.fetch_sub( 1, std::memory_order_relaxed ) - 1;
 
 	if ( !counter ) {
 		MoveToTaskRing( mainTaskRing, task );
@@ -217,18 +221,18 @@ bool TaskList::ResolveDependencies( Task& task, TaskInitList<T>& dependencies ) 
 			continue;
 		}
 
-		uint32_t id = dependency.forwardTaskCounter.fetch_add( 1 );
+		uint32_t id = dependency.forwardTaskCounter.fetch_add( 1, std::memory_order_relaxed );
 
 		ASSERT_LE( id, Task::MAX_FORWARD_TASKS );
 
 		dependency.forwardTasks[id] = task.bufferID;
 
+		task.dependencyCounter++;
+
 		dependency.forwardTaskLock.Unlock();
 
 		counter++;
 	}
-
-	task.dependencyCounter += counter;
 
 	return counter;
 }
@@ -245,22 +249,26 @@ void TaskList::AddTask( Task& task, TaskInitList<T>&& dependencies ) {
 
 	task.bufferID = taskMemory - tasks.memory;
 
+	*taskMemory = task;
+
 	TaskRing* taskRing;
-	if ( ResolveDependencies( task, dependencies ) ) {
+	if ( ResolveDependencies( *taskMemory, dependencies ) ) {
 		task.id = forwardTaskRing.AddToTaskRing( task, false );
 		taskRing = &forwardTaskRing;
 	} else {
-		task.id = mainTaskRing.AddToTaskRing( task, false );
+		task.id = mainTaskRing.AddToTaskRing( *taskMemory, false );
 		taskRing = &mainTaskRing;
 	}
 
 	SetBit( &task.id, TASK_SHIFT_ALLOCATED );
 
-	task.dependencyCounter--;
-
-	*taskMemory = task;
+	taskMemory->id = task.id;
 
 	taskRing->UnlockQueue( IDToTaskQueue( task.id ) );
+
+	if ( taskRing == &forwardTaskRing ) {
+		FinishDependency( task.bufferID );
+	}
 }
 
 void TaskList::AddTask( Task& task, std::initializer_list<Task> dependencies ) {
@@ -308,7 +316,7 @@ Task* TaskList::FetchTask( Thread* thread, const bool longestTask ) {
 
 			desired = SetBit( expected, queue );
 
-			if ( !mainTaskRing.queueLocks.compare_exchange_strong( expected, desired ) ) {
+			if ( !mainTaskRing.queueLocks.compare_exchange_strong( expected, desired, std::memory_order_acq_rel ) ) {
 				continue;
 			}
 
