@@ -33,12 +33,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 // RefAPI.cpp
 
+
+
 #include "common/Common.h"
 #include "qcommon/qcommon.h"
 
 #include "RefAPI.h"
 
 #include "Thread/TaskList.h"
+
+#include "Thread/SyncTask.h"
 
 Cvar::Modified<Cvar::Cvar<bool>> r_fullscreen( "r_fullscreen", "use full-screen window", CVAR_ARCHIVE, true );
 
@@ -89,7 +93,50 @@ namespace TempAPI {
 	void EndRegistration() {
 	}
 
+	void TestPrint() {
+		static uint32_t i = 0;
+		Log::WarnTag( "%u", i );
+		std::this_thread::sleep_for( std::chrono::microseconds( 5 ) );
+		i++;
+	}
+
+	bool TestTask() {
+		Task task{ &TestPrint };
+		SyncTask( &task );
+		SyncTask( { &TestPrint } );
+
+		Task task1{ &TestPrint };
+		Task task2{ &TestPrint };
+		Task task3{ &TestPrint };
+		Task task4{ &TestPrint };
+
+		taskList.AddTask( task1 );
+		taskList.AddTask( task2, { task1 } );
+		taskList.AddTask( task3, { task1 } );
+		taskList.AddTask( task4, { task2 } );
+
+		Task baseTask1{ &TestPrint };
+		Task baseTask2{ &TestPrint };
+		Task baseTask3{ &TestPrint };
+		Task baseTask4{ &TestPrint };
+
+		Task task11{ &TestPrint };
+		Task task12{ &TestPrint };
+		Task task13{ &TestPrint };
+		Task task14{ &TestPrint };
+
+		taskList.AddTasks(
+			{ task11, baseTask1, baseTask2 },
+			{ task12, baseTask1, baseTask3 },
+			{ task13, task11, task12 },
+			{ task14, baseTask4 }
+		);
+
+		return true;
+	}
+
 	void BeginFrame() {
+		TestTask();
 	}
 
 	void EndFrame( int*, int* ) {
@@ -372,6 +419,8 @@ refexport_t* GetRefAPI( int apiVersion, refimport_t* rimp ) {
 	re.GenerateTexture = TempAPI::GenerateTexture;
 	re.ShaderNameFromHandle = TempAPI::ShaderNameFromHandle;
 	re.SendBotDebugDrawCommands = TempAPI::SendBotDebugDrawCommands;
+
+	re.TestTask = TempAPI::TestTask;
 
 	return &re;
 }
