@@ -50,6 +50,8 @@ set(TASKLIST
     ${ENGINE_DIR}/renderer-vulkan/Thread/ThreadCommand.h
     ${ENGINE_DIR}/renderer-vulkan/Thread/ThreadMemory.cpp
     ${ENGINE_DIR}/renderer-vulkan/Thread/ThreadMemory.h
+    ${ENGINE_DIR}/renderer-vulkan/Thread/ThreadState.cpp
+    ${ENGINE_DIR}/renderer-vulkan/Thread/ThreadState.h
     ${ENGINE_DIR}/renderer-vulkan/Thread/ThreadUplink.cpp
     ${ENGINE_DIR}/renderer-vulkan/Thread/ThreadUplink.h
 )
