@@ -36,13 +36,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef REFAPI_H
 #define REFAPI_H
 
-// HACK: Avoid redefinition from tr_public includes in client.h
-#ifndef __TR_PUBLIC_H
-#define __TR_PUBLIC_H
-
-#ifndef __TR_TYPES_H
-#define __TR_TYPES_H
-
 #include "common/Common.h"
 
 #define REF_API_VERSION 10
@@ -390,8 +383,5 @@ struct refimport_t
 };
 
 extern Cvar::Modified<Cvar::Cvar<bool>> r_fullscreen;
-
-#endif // __TR_TYPES_H
-#endif // __TR_PUBLIC_H
 
 #endif // REFAPI_H

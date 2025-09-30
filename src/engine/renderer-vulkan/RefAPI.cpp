@@ -36,7 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "common/Common.h"
 #include "qcommon/qcommon.h"
 
-#include "RefAPI.h"
+#include "engine/RefAPI.h"
+
 #include "Init.h"
 
 #include "Thread/TaskList.h"

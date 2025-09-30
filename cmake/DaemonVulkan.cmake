@@ -36,6 +36,28 @@ if( NOT Vulkan_FOUND )
 	message( FATAL_ERROR "Could NOT find libVulkan" )
 endif()
 
+function( GenerateVulkanHeaders )
+	find_package( Python REQUIRED )
+
+	set( generatorPath ${CMAKE_SOURCE_DIR}/cmake/DaemonVulkan )
+	set( vulkanLoaderPath ${CMAKE_SOURCE_DIR}/src/engine/renderer-vulkan/VulkanLoader/vulkan/ )
+	
+	add_custom_command(
+		# TARGET client
+		PRE_BUILD
+		COMMAND ${PYTHON_EXECUTABLE} ${Python_EXECUTABLE} ${generatorPath}/genvk.py -registry ${generatorPath}/vk.xml -o ${vulkanLoaderPath} -apiname vulkan vulkan_core.h
+		DEPENDS
+			${generatorPath}/vk.xml
+			${generatorPath}/genvk.py
+			${generatorPath}/reg.py
+			${generatorPath}/generator.py
+			${generatorPath}/cgenerator.py
+		OUTPUT
+			${vulkanLoaderPath}vulkan_core.h
+		COMMENT "Generating Vulkan headers"
+	)
+endfunction()
+
 #try_compile( BUILD_RESULT
 #	"${CMAKE_BINARY_DIR}"
 #	"${DAEMON_DIR}/cmake/DaemonVulkan/VulkanHeaderParser.cpp"
@@ -56,9 +78,9 @@ endif()
 #	string( REPLACE "/" "\\" vulkanLoaderPath ${vulkanHeaderPath} )
 #endif()
 
-option( BUILD_VULKAN_HEADER_PARSER "Build Vulkan header parser for default sType and function declarations/definitions." OFF )
-mark_as_advanced( BUILD_VULKAN_HEADER_PARSER )
+# option( BUILD_VULKAN_HEADER_PARSER "Build Vulkan header parser for default sType and function declarations/definitions." OFF )
+# mark_as_advanced( BUILD_VULKAN_HEADER_PARSER )
 
-add_executable( VulkanHeaderParser "${DAEMON_DIR}/cmake/DaemonVulkan/VulkanHeaderParser.cpp" )
-target_compile_definitions( VulkanHeaderParser PRIVATE "-DDAEMON_VULKAN_HEADER_PATH=\"${DAEMON_DIR}/cmake/DaemonVulkan/\"" )
-target_compile_definitions( VulkanHeaderParser PRIVATE "-DDAEMON_VULKAN_LOADER_PATH=\"${DAEMON_DIR}/src/engine/renderer-vulkan/VulkanLoader/\"" )
+# add_executable( VulkanHeaderParser "${DAEMON_DIR}/cmake/DaemonVulkan/VulkanHeaderParser.cpp" )
+# target_compile_definitions( VulkanHeaderParser PRIVATE "-DDAEMON_VULKAN_HEADER_PATH=\"${DAEMON_DIR}/cmake/DaemonVulkan/\"" )
+# target_compile_definitions( VulkanHeaderParser PRIVATE "-DDAEMON_VULKAN_LOADER_PATH=\"${DAEMON_DIR}/src/engine/renderer-vulkan/VulkanLoader/\"" )

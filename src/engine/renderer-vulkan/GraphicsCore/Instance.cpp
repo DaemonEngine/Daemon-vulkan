@@ -71,7 +71,7 @@ void Instance::Init( const char* engineName, const char* appName ) {
 	uint32 count;
 	const char* const* sdlext = SDL_Vulkan_GetInstanceExtensions( &count );
 
-	for ( int i = 0; i < count; i++ ) {
+	for ( uint32 i = 0; i < count; i++ ) {
 		Log::Notice( sdlext[i] );
 	}
 
@@ -100,6 +100,7 @@ void Instance::Init( const char* engineName, const char* appName ) {
 	};
 
 	VkResult res = vkCreateInstance( &createInfo, nullptr, &instance );
+	Q_UNUSED( res );
 
 	VulkanLoadInstanceFunctions( instance );
 
@@ -126,7 +127,7 @@ void Instance::Init( const char* engineName, const char* appName ) {
 	CreateDevice( physicalDevice, engineConfig, queuesConfig,
 		capabilityPackMinimal.requiredExtensions.memory, capabilityPackMinimal.requiredExtensions.size, &device );
 
-	VulkanLoadDeviceFunctions( device, instance );
+	VulkanLoadDeviceFunctions( device );
 
 	mainSwapChain.Init( instance );
 
@@ -158,4 +159,71 @@ void Instance::Init( const char* engineName, const char* appName ) {
 	}
 
 	Log::Notice( foundQueues );
+
+	VkCommandPool pool;
+	VkCommandBuffer cmd;
+	VkCommandPoolCreateInfo info{
+		.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+		.queueFamilyIndex = graphicsQueue.id
+	};
+
+	vkCreateCommandPool( device, &info, nullptr, &pool );
+
+	VkCommandBufferAllocateInfo cmdInfo {
+		.commandPool = pool,
+		.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+		.commandBufferCount = 1
+	};
+
+	vkAllocateCommandBuffers( device, &cmdInfo, &cmd );
+
+	DynamicArray<VkImage> images;
+	images.Resize( mainSwapChain.imageCount );
+
+	uint32 imageCount = mainSwapChain.imageCount;
+	vkGetSwapchainImagesKHR( device, mainSwapChain.swapChain, &imageCount, images.memory );
+
+	uint32 index;
+	vkAcquireNextImageKHR( device, mainSwapChain.swapChain, UINT64_MAX, nullptr, nullptr, &index );
+
+	VkCommandBufferBeginInfo cmdBegin {};
+
+	vkBeginCommandBuffer( cmd, &cmdBegin );
+
+	VkClearColorValue colorClear {
+		.float32 = { 1.0f, 0.0f, 0.0f, 1.0f }
+	};
+
+	VkImageSubresourceRange ff {
+		.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+		.baseMipLevel = 0,
+		.levelCount = 1,
+		.baseArrayLayer = 0,
+		.layerCount = 1
+	};
+	vkCmdClearColorImage( cmd, images[index], VK_IMAGE_LAYOUT_GENERAL, &colorClear, 1, &ff );
+	
+	vkEndCommandBuffer( cmd );
+
+	VkSubmitInfo si {
+		.waitSemaphoreCount = 0,
+		.pWaitSemaphores = nullptr,
+		.pWaitDstStageMask = nullptr,
+		.commandBufferCount = 1,
+		.pCommandBuffers = &cmd,
+		.signalSemaphoreCount = 0,
+		.pSignalSemaphores = nullptr
+	};
+	vkQueueSubmit( graphicsQueue.queues[0].queue, 1, &si, nullptr );
+
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.waitSemaphoreCount = 0;
+	presentInfo.pWaitSemaphores = nullptr;
+
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = &mainSwapChain.swapChain;
+	presentInfo.pImageIndices = &index;
+	presentInfo.pResults = nullptr;
+
+	vkQueuePresentKHR( graphicsQueue.queues[0].queue, &presentInfo );
 }

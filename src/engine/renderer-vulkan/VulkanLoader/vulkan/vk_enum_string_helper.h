@@ -13,7 +13,7 @@
 #ifdef __cplusplus
 #include <string>
 #endif
-#include <vulkan/vulkan.h>
+#include "vulkan.h"
 static inline const char* string_VkResult(VkResult input_value) {
     switch (input_value) {
         case VK_SUCCESS:
@@ -2258,8 +2258,8 @@ static inline const char* string_VkStructureType(VkStructureType input_value) {
             return "VK_STRUCTURE_TYPE_VIDEO_DECODE_H265_INLINE_SESSION_PARAMETERS_INFO_KHR";
         case VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_INLINE_SESSION_PARAMETERS_INFO_KHR:
             return "VK_STRUCTURE_TYPE_VIDEO_DECODE_AV1_INLINE_SESSION_PARAMETERS_INFO_KHR";
-        case VK_STRUCTURE_TYPE_OH_SURFACE_CREATE_INFO_OHOS:
-            return "VK_STRUCTURE_TYPE_OH_SURFACE_CREATE_INFO_OHOS";
+        case VK_STRUCTURE_TYPE_SURFACE_CREATE_INFO_OHOS:
+            return "VK_STRUCTURE_TYPE_SURFACE_CREATE_INFO_OHOS";
         case VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_VIVID_FEATURES_HUAWEI:
             return "VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_HDR_VIVID_FEATURES_HUAWEI";
         case VK_STRUCTURE_TYPE_HDR_VIVID_DYNAMIC_METADATA_HUAWEI:

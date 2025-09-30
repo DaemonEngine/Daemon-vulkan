@@ -24,7 +24,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-cmake_minimum_required (VERSION 3.24)
+cmake_minimum_required (VERSION 3.12)
 
 # Choose Python versions by location instead of getting whatever is in PYTHON_EXECUTABLE
 # Can be removed once we require CMake 3.15
@@ -432,21 +432,13 @@ if (DEPS_DIR)
         set(OLD_VERSION "NOTFOUND")
         set(cacheVariableValue "${${cacheVariableName}}")
 
-        if( USE_VULKAN )
-            set( SUPPORTED_DEPS_PLATFORMS "/(linux64|macosx64|mingw64|msvc64)-([0-9]+)/" )
-            set( SUPPORTED_DEPS_PLATFORMS2 "/(linux|windows|macos)-amd64-(default|mingw|msvc)_([0-9]+)/" )
-        else()
-            set( SUPPORTED_DEPS_PLATFORMS "/(linux64|macosx64|mingw32|mingw64|msvc32|msvc64)-([0-9]+)/" )
-            set( SUPPORTED_DEPS_PLATFORMS2 "/(linux|windows|macos)-(i686|amd64)-(default|mingw|msvc)_([0-9]+)/" )
-        endif()
-
-        if (cacheVariableValue MATCHES ${SUPPORTED_DEPS_PLATFORMS})
+        if (cacheVariableValue MATCHES "/(linux64|macosx64|mingw32|mingw64|msvc32|msvc64)-([0-9]+)/")
             if (NOT ${CMAKE_MATCH_2} EQUAL ${DEPS_VERSION})
                 set(OLD_VERSION ${CMAKE_MATCH_2})
             endif()
         endif()
 
-        if (cacheVariableValue MATCHES ${SUPPORTED_DEPS_PLATFORMS2})
+        if (cacheVariableValue MATCHES "/(linux|windows|macos)-(i686|amd64)-(default|mingw|msvc)_([0-9]+)/")
             if (NOT ${CMAKE_MATCH_4} EQUAL ${DEPS_VERSION})
                 set(OLD_VERSION ${CMAKE_MATCH_4})
             endif()
@@ -598,71 +590,69 @@ if (USE_VULKAN)
     add_definitions("-DDAEMON_RENDERER_VULKAN=1")
     add_definitions("-DVK_NO_PROTOTYPES=1")
     include(DaemonVulkan)
-    set(LIBS_CLIENT ${LIBS_CLIENT} Vulkan::Vulkan)
 else()
     add_definitions("-DDAEMON_RENDERER_OPENGL=1")
-endif()
 
-# TODO: Split OpenGL and Vulkan library configuration.
-# Look for OpenGL here before we potentially switch to looking for static libs.
-if (BUILD_CLIENT)
-    if (LINUX OR FREEBSD)
-        # Set LEGACY OpenGL ABI if the variable is not explictly set.
-        # The backward-incompatible GLVND OpenGL ABI should only be used
-        # by developers who have a good reason to require it.
-        # See: https://github.com/DaemonEngine/Daemon/issues/945#issuecomment-1835091256
-        set(OpenGL_GL_PREFERENCE "LEGACY" CACHE STRING "Linux OpenGL ABI (LEGACY or GLVND).")
-    endif()
-
-    find_package(OpenGL REQUIRED)
-    include_directories(${OPENGL_INCLUDE_DIR})
-    set(LIBS_CLIENT ${LIBS_CLIENT} OpenGL::GL)
-
-    # When OpenGL_GL_PREFERENCE is set but neither GLVND nor LEGACY are available,
-    # This code is unreachable since it already errored out at find_package time.
-    # This code only executes if OpenGL is supported, either because the GLVND ABI
-    # is available, either because the LEGACY ABI is available.
-    if (LINUX OR FREEBSD)
-        if (NOT OPENGL_gl_LIBRARY)
-            # When OpenGL_GL_PREFERENCE is supported and GLVND is available
-            # OPENGL_gl_LIBRARY is expected to be empty. So we can use the
-            # emptyness of OPENGL_gl_LIBRARY to detect that CMake supports
-            # OpenGL_GL_PREFERENCE and GLVND is used:
-            # > If the GLVND OpenGL and GLX libraries are available, prefer them.
-            # > This forces OPENGL_gl_LIBRARY to be empty.
-            # -- https://cmake.org/cmake/help/latest/module/FindOpenGL.html
-            set(OpenGL_selected_ABI "GLVND")
-            set(OpenGL_selected_LIBRARY "${OPENGL_opengl_LIBRARY}")
-        else()
-            # When OpenGL_GL_PREFERENCE is not supported or GLVND is not available
-            # the OPENGL_gl_LIBRARY is always set, so if it is set, it means the ABI
-            # is the LEGACY one.
-            set(OpenGL_selected_ABI "LEGACY")
-            set(OpenGL_selected_LIBRARY "${OPENGL_gl_LIBRARY}")
+    # Look for OpenGL here before we potentially switch to looking for static libs.
+    if (BUILD_CLIENT)
+        if (LINUX OR FREEBSD)
+            # Set LEGACY OpenGL ABI if the variable is not explictly set.
+            # The backward-incompatible GLVND OpenGL ABI should only be used
+            # by developers who have a good reason to require it.
+            # See: https://github.com/DaemonEngine/Daemon/issues/945#issuecomment-1835091256
+            set(OpenGL_GL_PREFERENCE "LEGACY" CACHE STRING "Linux OpenGL ABI (LEGACY or GLVND).")
         endif()
 
-        if (OpenGL_selected_ABI STREQUAL "GLVND")
-            message(WARNING "The GLVND OpenGL ABI is backward incompatible with legacy drivers.\nSee https://github.com/DaemonEngine/Daemon/issues/945")
-        endif()
+        find_package(OpenGL REQUIRED)
+        include_directories(${OPENGL_INCLUDE_DIR})
+        set(LIBS_CLIENT ${LIBS_CLIENT} OpenGL::GL)
 
-        if (OpenGL_GL_PREFERENCE STREQUAL "GLVND")
-            if (NOT OPENGL_opengl_LIBRARY)
-                message(WARNING "GLVND OpenGL ABI not available but LEGACY is.\nTry OpenGL_GL_PREFERENCE=LEGACY")
-                message(FATAL_ERROR "Could NOT find GLVND libOpenGL.so")
-            endif()
-        else()
+        # When OpenGL_GL_PREFERENCE is set but neither GLVND nor LEGACY are available,
+        # This code is unreachable since it already errored out at find_package time.
+        # This code only executes if OpenGL is supported, either because the GLVND ABI
+        # is available, either because the LEGACY ABI is available.
+        if (LINUX OR FREEBSD)
             if (NOT OPENGL_gl_LIBRARY)
-                message(WARNING "LEGACY OpenGL ABI not available but GLVND is.\nTry OpenGL_GL_PREFERENCE=GLVND")
-                message(FATAL_ERROR "Could NOT find LEGACY libGL.so")
+                # When OpenGL_GL_PREFERENCE is supported and GLVND is available
+                # OPENGL_gl_LIBRARY is expected to be empty. So we can use the
+                # emptyness of OPENGL_gl_LIBRARY to detect that CMake supports
+                # OpenGL_GL_PREFERENCE and GLVND is used:
+                # > If the GLVND OpenGL and GLX libraries are available, prefer them.
+                # > This forces OPENGL_gl_LIBRARY to be empty.
+                # -- https://cmake.org/cmake/help/latest/module/FindOpenGL.html
+                set(OpenGL_selected_ABI "GLVND")
+                set(OpenGL_selected_LIBRARY "${OPENGL_opengl_LIBRARY}")
+            else()
+                # When OpenGL_GL_PREFERENCE is not supported or GLVND is not available
+                # the OPENGL_gl_LIBRARY is always set, so if it is set, it means the ABI
+                # is the LEGACY one.
+                set(OpenGL_selected_ABI "LEGACY")
+                set(OpenGL_selected_LIBRARY "${OPENGL_gl_LIBRARY}")
             endif()
+
+            if (OpenGL_selected_ABI STREQUAL "GLVND")
+                message(WARNING "The GLVND OpenGL ABI is backward incompatible with legacy drivers.\nSee https://github.com/DaemonEngine/Daemon/issues/945")
+            endif()
+
+            if (OpenGL_GL_PREFERENCE STREQUAL "GLVND")
+                if (NOT OPENGL_opengl_LIBRARY)
+                    message(WARNING "GLVND OpenGL ABI not available but LEGACY is.\nTry OpenGL_GL_PREFERENCE=LEGACY")
+                    message(FATAL_ERROR "Could NOT find GLVND libOpenGL.so")
+                endif()
+            else()
+                if (NOT OPENGL_gl_LIBRARY)
+                    message(WARNING "LEGACY OpenGL ABI not available but GLVND is.\nTry OpenGL_GL_PREFERENCE=GLVND")
+                    message(FATAL_ERROR "Could NOT find LEGACY libGL.so")
+                endif()
+            endif()
+
+            message(STATUS "Found OpenGL ABI: ${OpenGL_selected_ABI}")
+            message(STATUS "Found OpenGL library: ${OpenGL_selected_LIBRARY}")
+
+            daemon_add_buildinfo("char*" "DAEMON_OPENGL_ABI_STRING" "\"${OpenGL_selected_ABI}\"")
+            add_definitions("-DDAEMON_OPENGL_ABI_${OpenGL_selected_ABI}")
+            add_definitions("-DDAEMON_OPENGL_ABI")
         endif()
-
-        message(STATUS "Found OpenGL ABI: ${OpenGL_selected_ABI}")
-        message(STATUS "Found OpenGL library: ${OpenGL_selected_LIBRARY}")
-
-        daemon_add_buildinfo("char*" "DAEMON_OPENGL_ABI_STRING" "\"${OpenGL_selected_ABI}\"")
-        add_definitions("-DDAEMON_OPENGL_ABI_${OpenGL_selected_ABI}")
-        add_definitions("-DDAEMON_OPENGL_ABI")
     endif()
 endif()
 
@@ -994,6 +984,8 @@ if (BUILD_CLIENT)
         Libs ${LIBS_CLIENT} ${LIBS_CLIENTBASE} ${LIBS_ENGINE}
         Tests ${CLIENTTESTLIST}
     )
+
+    GenerateVulkanHeaders()
 
     # generate glsl include files
     set(GLSL_SOURCE_DIR ${ENGINE_DIR}/renderer/glsl_source)
