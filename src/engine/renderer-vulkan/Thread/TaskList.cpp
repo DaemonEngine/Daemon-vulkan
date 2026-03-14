@@ -101,7 +101,7 @@ void TaskList::Init() {
 	tasksData.Alloc( MAX_TASK_DATA );
 
 	int threads = r_vkThreadCount.Get();
-	threads = threads ? threads : CPU_CORES;
+	threads     = threads ? threads : CPU_CORES;
 	AdjustThreadCount( threads );
 }
 
@@ -170,7 +170,7 @@ void TaskList::FinishTask( Task* task ) {
 }
 
 void TaskList::FinishDependency( const uint16 bufferID ) {
-	Task& task = tasks[bufferID];
+	Task&        task    = tasks[bufferID];
 
 	const uint32 counter = task.dependencyCounter.fetch_sub( 1, std::memory_order_relaxed ) - 1;
 
@@ -213,7 +213,7 @@ void TaskList::ResolveDependencies( Task& task, TaskInitList<T>& dependencies ) 
 			continue;
 		}
 
-		uint32 id                   = dependency.forwardTaskCounter.fetch_add( 1, std::memory_order_relaxed );
+		uint32 id = dependency.forwardTaskCounter.fetch_add( 1, std::memory_order_relaxed );
 
 		ASSERT_LE( id, Task::MAX_FORWARD_TASKS );
 
@@ -243,6 +243,7 @@ void ThreadQueue::AddTask( const uint32 threadID, const uint16 bufferID ) {
 
 void TaskList::AddToThreadQueueExt( Task& task ) {
 	while ( !SM.taskTimesLock.Lock() );
+
 	TaskTime taskTime;
 
 	if ( SM.taskTimes.contains( task.Execute ) ) {
@@ -392,7 +393,7 @@ void TaskList::AddTask( Task& task, TaskInitList<T>&& dependencies ) {
 
 template<IsTask T>
 void TaskList::MarkDependencies( Task& task, TaskInitList<T>&& dependencies ) {
-	Task* mainTask           = GetTaskMemory( task );
+	Task*  mainTask          = GetTaskMemory( task );
 	uint32 dependencyCounter = 0;
 
 	for ( const T* dep = dependencies.start; dep < dependencies.end; dep++ ) {
