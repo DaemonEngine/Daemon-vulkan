@@ -46,6 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "DebugMsg.h"
 
 static VkDebugUtilsMessengerEXT debugUtilsMessenger;
+static VkDebugReportCallbackEXT debugReportMessenger;
 
 static VkBool32 DebugUtilsMsg( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* /* pUserData */ ) {
@@ -65,10 +66,10 @@ static VkBool32 DebugUtilsMsg( VkDebugUtilsMessageSeverityFlagBitsEXT messageSev
 	}
 
 	const char* debugMsgColours[] {
-		"^9",
-		"^5",
-		"^3",
-		"^1"
+		"^9", // DEBUG_MSG_VERBOSE
+		"^5", // DEBUG_MSG_INFO
+		"^3", // DEBUG_MSG_WARNING
+		"^1"  // DEBUG_MSG_ERROR
 	};
 
 	const char* msgColour = debugMsgColours[severity];
@@ -114,6 +115,34 @@ static VkBool32 DebugUtilsMsg( VkDebugUtilsMessageSeverityFlagBitsEXT messageSev
 	return false;
 }
 
+VkBool32 DebugReportMsg( VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType, uint64 object, uint64 location, int messageCode,
+                         const char* pLayerPrefix, const char* pMessage, void* pUserData ) {
+	uint32 flagsMask = r_vkDebugMsgFlags.Get();
+
+	if ( !( flags & flagsMask ) ) {
+		return false;
+	}
+
+	const char* debugMsgColours[] {
+		"^5", // DEBUG_MSG_FLAGS_INFO
+		"^3", // DEBUG_MSG_FLAGS_WARNING
+		"^8", // DEBUG_MSG_FLAGS_PERFORMANCE
+		"^1", // DEBUG_MSG_FLAGS_ERROR
+		"^B"  // DEBUG_MSG_FLAGS_DEBUG
+	};
+
+	const std::string msg = Str::Format( "%s[%s] [%s %u]: %s",
+		debugMsgColours[flags], pLayerPrefix, string_VkDebugReportObjectTypeEXT( objectType ), object, pMessage );
+
+	if ( flags & ( DEBUG_MSG_FLAGS_WARNING | DEBUG_MSG_FLAGS_ERROR ) ) {
+		Log::Warn( msg );
+	} else {
+		Log::Notice( msg );
+	}
+
+	return false;
+}
+
 void InitDebugMsg() {
 	VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerInfo {
 		.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT
@@ -124,4 +153,12 @@ void InitDebugMsg() {
 	};
 
 	vkCreateDebugUtilsMessengerEXT( instance.instance, &debugUtilsMessengerInfo, nullptr, &debugUtilsMessenger );
+
+	VkDebugReportCallbackCreateInfoEXT debugReportMessengerInfo {
+		.flags       = VK_DEBUG_REPORT_INFORMATION_BIT_EXT | VK_DEBUG_REPORT_WARNING_BIT_EXT | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT
+		             | VK_DEBUG_REPORT_ERROR_BIT_EXT | VK_DEBUG_REPORT_DEBUG_BIT_EXT,
+		.pfnCallback = &DebugReportMsg
+	};
+
+	vkCreateDebugReportCallbackEXT( instance.instance, &debugReportMessengerInfo, nullptr, &debugReportMessenger );
 }

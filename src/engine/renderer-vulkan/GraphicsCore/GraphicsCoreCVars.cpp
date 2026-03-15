@@ -67,6 +67,10 @@ Cvar::Range<Cvar::Cvar<int>> r_vkDebugMsgType( "r_vkDebugMsgType",
 	"DebugUtilsMessenger type bitmask: 0 - none, 1 - general, 2 - validation, 4 - performance",
 	Cvar::NONE, 0, 0, DebugMsgType::DEBUG_MSG_TYPE_ALL );
 
+Cvar::Range<Cvar::Cvar<int>> r_vkDebugMsgFlags( "r_vkDebugMsgFlags",
+	"DebugReportMessenger flags bitmask: 0 - none, 1 - info, 2 - warning, 4 - performance, 8 - error, 16 - debug",
+	Cvar::NONE, 0, 0, DebugMsgFlags::DEBUG_MSG_FLAGS_ALL );
+
 Cvar::Range<Cvar::Cvar<int>> r_vkPresentMode( "r_vkPresentMode",
 	"Presentation mode: 0 - immediate, 1 - vsync on last presented frame, 2 - vsync on first presented frame before scanout, "
 	"3 - relaxed vsync on first presented frame before scanout, 4 - vsync on the closest frame to scanout",

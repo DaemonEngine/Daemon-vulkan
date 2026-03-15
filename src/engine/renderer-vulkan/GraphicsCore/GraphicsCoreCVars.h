@@ -53,6 +53,7 @@ extern Cvar::Cvar<int>                r_displayIndex;
 
 extern Cvar::Range<Cvar::Cvar<int>>   r_vkDebugMsgSeverity;
 extern Cvar::Range<Cvar::Cvar<int>>   r_vkDebugMsgType;
+extern Cvar::Range<Cvar::Cvar<int>>   r_vkDebugMsgFlags;
 
 extern Cvar::Range<Cvar::Cvar<int>>   r_vkPresentMode;
 extern Cvar::Range<Cvar::Cvar<int>>   r_mode;
