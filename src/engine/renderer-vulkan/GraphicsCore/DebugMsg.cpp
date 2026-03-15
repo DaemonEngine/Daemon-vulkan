@@ -35,11 +35,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "../Math/Bit.h"
 
+#include "../Memory/DynamicArray.h"
+
 #include "Vulkan.h"
 
 #include "GraphicsCoreCVars.h"
 
 #include "GraphicsCoreStore.h"
+
+#include "FeaturesConfig.h"
 
 #include "Instance.h"
 
@@ -47,6 +51,142 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 static VkDebugUtilsMessengerEXT debugUtilsMessenger;
 static VkDebugReportCallbackEXT debugReportMessenger;
+
+const char* ObjectTypeToString( const VkObjectType objectType ) {
+	switch ( objectType ) {
+        case VK_OBJECT_TYPE_UNKNOWN:
+            return "Unknown";
+        case VK_OBJECT_TYPE_INSTANCE:
+            return "Instance";
+        case VK_OBJECT_TYPE_PHYSICAL_DEVICE:
+            return "Physical Device";
+        case VK_OBJECT_TYPE_DEVICE:
+            return "Device";
+        case VK_OBJECT_TYPE_QUEUE:
+            return "Queue";
+        case VK_OBJECT_TYPE_SEMAPHORE:
+            return "Semaphore";
+        case VK_OBJECT_TYPE_COMMAND_BUFFER:
+            return "Command Buffer";
+        case VK_OBJECT_TYPE_FENCE:
+            return "Fence";
+        case VK_OBJECT_TYPE_DEVICE_MEMORY:
+            return "Device Memory";
+        case VK_OBJECT_TYPE_BUFFER:
+            return "Buffer";
+        case VK_OBJECT_TYPE_IMAGE:
+            return "Image";
+        case VK_OBJECT_TYPE_EVENT:
+            return "Event";
+        case VK_OBJECT_TYPE_QUERY_POOL:
+            return "Query Pool";
+        case VK_OBJECT_TYPE_IMAGE_VIEW:
+            return "Image View";
+        case VK_OBJECT_TYPE_PIPELINE_CACHE:
+            return "Pipeline Cache";
+        case VK_OBJECT_TYPE_PIPELINE_LAYOUT:
+            return "Pipeline Layout";
+        case VK_OBJECT_TYPE_PIPELINE:
+            return "Pipeline";
+        case VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT:
+            return "DescriptorSet Layout";
+        case VK_OBJECT_TYPE_SAMPLER:
+            return "Sampler";
+        case VK_OBJECT_TYPE_DESCRIPTOR_POOL:
+            return "Descriptor Pool";
+        case VK_OBJECT_TYPE_DESCRIPTOR_SET:
+            return "DescriptorSet";
+        case VK_OBJECT_TYPE_COMMAND_POOL:
+            return "Command Pool";
+        case VK_OBJECT_TYPE_SURFACE_KHR:
+            return "Surface";
+        case VK_OBJECT_TYPE_SWAPCHAIN_KHR:
+            return "SwapChain";
+        case VK_OBJECT_TYPE_DISPLAY_KHR:
+            return "Display";
+        case VK_OBJECT_TYPE_DISPLAY_MODE_KHR:
+            return "Display Mode";
+        case VK_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT:
+            return "Debug Report Callback";
+        case VK_OBJECT_TYPE_DEBUG_UTILS_MESSENGER_EXT:
+            return "DebugUtilsMessenger";
+        case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR:
+            return "Acceleration Structure";
+        case VK_OBJECT_TYPE_MICROMAP_EXT:
+            return "Micromap";
+        case VK_OBJECT_TYPE_PIPELINE_BINARY_KHR:
+            return "Pipeline Binary";
+        case VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT:
+            return "DGC Layout";
+        case VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT:
+            return "DGC ExecutionSet";
+        default:
+            return "Unsupported Type";
+    }
+}
+
+const char* DebugReportObjectTypeToString( const VkDebugReportObjectTypeEXT objectType ) {
+	switch ( objectType ) {
+		case VK_DEBUG_REPORT_OBJECT_TYPE_UNKNOWN_EXT:
+			return "Unknown";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT:
+			return "Instance";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT:
+			return "Physical Device";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_EXT:
+			return "Device";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT:
+			return "Queue";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT:
+			return "Semaphore";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT:
+			return "Command Buffer";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT:
+			return "Fence";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT:
+			return "Device Memory";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT:
+			return "Buffer";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT:
+			return "Image";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT:
+			return "Event";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT:
+			return "Query Pool";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT:
+			return "Image View";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_CACHE_EXT:
+			return "Pipeline Cache";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT:
+			return "Pipeline Layout";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT:
+			return "Pipeline";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT:
+			return "DescriptorSet Layout";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT:
+			return "Sampler";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT:
+			return "Descriptor Pool";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT:
+			return "DescriptorSet";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT:
+			return "Command Pool";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT:
+			return "Surface";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT:
+			return "SwapChain";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_CALLBACK_EXT_EXT:
+			return "Debug Report Callback";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_KHR_EXT:
+			return "Display";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_DISPLAY_MODE_KHR_EXT:
+			return "Display Mode";
+		case VK_DEBUG_REPORT_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR_EXT:
+			return "Acceleration Structure";
+		default:
+			return "Unsupported Type";
+	}
+}
 
 static VkBool32 DebugUtilsMsg( VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageTypes,
                                const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* /* pUserData */ ) {
@@ -85,13 +225,13 @@ static VkBool32 DebugUtilsMsg( VkDebugUtilsMessageSeverityFlagBitsEXT messageSev
 	if ( pCallbackData->objectCount ) {
 		const char* name = pCallbackData->pObjects[0].pObjectName ? pCallbackData->pObjects[0].pObjectName : "";
 
-		msg = Str::Format( "[%s %s] %s", string_VkObjectType( pCallbackData->pObjects[0].objectType ), name, msg );
+		msg = Str::Format( "[%s%s%s] %s", ObjectTypeToString( pCallbackData->pObjects[0].objectType ), name, *name ? " " : "", msg);
 	}
 
 	for ( const VkDebugUtilsObjectNameInfoEXT* obj = pCallbackData->pObjects + 1; obj < pCallbackData->pObjects + pCallbackData->objectCount; obj++ ) {
 		const char* name = obj->pObjectName ? obj->pObjectName : "";
 
-		msg = Str::Format( "%s {%s %s}", msg, string_VkObjectType( obj->objectType ), name );
+		msg = Str::Format( "%s {%s %s}", msg, ObjectTypeToString( obj->objectType ), name );
 	}
 
 	for ( const VkDebugUtilsLabelEXT* label = pCallbackData->pQueueLabels; label < pCallbackData->pQueueLabels + pCallbackData->queueLabelCount; label++ ) {
@@ -132,7 +272,7 @@ VkBool32 DebugReportMsg( VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT
 	};
 
 	const std::string msg = Str::Format( "%s[%s] [%s %u]: %s",
-		debugMsgColours[flags], pLayerPrefix, string_VkDebugReportObjectTypeEXT( objectType ), object, pMessage );
+		debugMsgColours[flags], pLayerPrefix, DebugReportObjectTypeToString( objectType ), object, pMessage );
 
 	if ( flags & ( DEBUG_MSG_FLAGS_WARNING | DEBUG_MSG_FLAGS_ERROR ) ) {
 		Log::Warn( msg );
