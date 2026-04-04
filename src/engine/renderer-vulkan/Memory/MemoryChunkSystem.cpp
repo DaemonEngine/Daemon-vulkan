@@ -135,7 +135,7 @@ void MemoryChunkSystem::InitConfig( const char* configText ) {
 		}
 
 		if ( areaConfig.chunks < memoryChunkConfigRequired[i][1] ) {
-			areaConfig.chunks = memoryChunkConfigRequired[i][1];
+			areaConfig.chunks    = memoryChunkConfigRequired[i][1];
 		}
 
 		notValid = notValid ? notValid - 1 : 0;
@@ -179,17 +179,22 @@ MemoryChunk MemoryChunkSystem::Alloc( uint64 size ) {
 
 	if ( count > 64 ) {
 		Err( "Allocation size too large: %ull", size );
+
+		return {};
 	}
 
-	MemoryChunk out;
 
 	if ( count > 1 ) {
 		Err( "Couldn't find memory chunk large enough to support allocation (%u bytes, requires %u * %u byte chunks)",
 			size, count, memoryAreas[level].config.chunkSize );
+
+		return {};
 	}
 
 	uint32 initialLevel = level;
-	while ( !LockArea( level, &out.chunkArea, &out.chunk ) ) {
+	uint8  chunkArea;
+	uint8  chunk;
+	while ( !LockArea( level, &chunkArea, &chunk ) ) {
 		if ( level == 0 ) {
 			Log::WarnTagT( "No memory chunks available, yielding" );
 			std::this_thread::yield();
@@ -199,11 +204,13 @@ MemoryChunk MemoryChunkSystem::Alloc( uint64 size ) {
 		}
 	}
 
-	out.level = level;
-	out.size = memoryAreas[level].config.chunkSize;
-	out.memory = memoryAreas[level].memory + ( out.chunkArea * 64ull + out.chunk ) * memoryAreas[level].config.chunkSize;
-
-	return out;
+	return {
+		.level     = ( uint8 ) level,
+		.chunk     = chunk,
+		.chunkArea = chunkArea,
+		.size      = ( uint32 ) memoryAreas[level].config.chunkSize,
+		.memory    = memoryAreas[level].memory + ( chunkArea * 64ull + chunk ) * memoryAreas[level].config.chunkSize
+	};
 }
 
 void MemoryChunkSystem::Free( MemoryChunk* memoryChunk ) {
@@ -228,18 +235,18 @@ void MemoryChunkSystem::SizeToLevel( const uint64 size, uint32* level, uint32* c
 		} */
 	}
 
-	Sys::Drop( "Couldn't find memory area with large enough chunkSize, requested: %u bytes", size );
+	Err( "Couldn't find memory area with large enough chunkSize, requested: %u bytes", size );
 }
 
 bool MemoryChunkSystem::LockArea( const uint32 level, uint8* chunkArea, uint8* chunk ) {
-	uint64 expectedLocks;
-	uint64 desiredLocks;
-	uint8 foundChunk;
+	uint64      expectedLocks;
+	uint64      desiredLocks;
+	uint8       foundChunk;
 
-	uint32 loopCount = 0;
+	uint32      loopCount  = 0;
 
-	uint32 i = 0;
-	uint8 area = 0;
+	uint32      i          = 0;
+	uint8       area       = 0;
 	MemoryArea& memoryArea = memoryAreas[level];
 
 	Timer t;
@@ -260,7 +267,7 @@ bool MemoryChunkSystem::LockArea( const uint32 level, uint8* chunkArea, uint8* c
 				continue;
 			}
 
-			foundChunk = FindLZeroBit( expectedLocks );
+			foundChunk   = FindLZeroBit( expectedLocks );
 
 			Log::DebugTagT( "Trying chunk %u:%u", i, foundChunk );
 
@@ -271,7 +278,7 @@ bool MemoryChunkSystem::LockArea( const uint32 level, uint8* chunkArea, uint8* c
 
 			desiredLocks = SetBit( expectedLocks, foundChunk );
 
-			area = i;
+			area         = i;
 			i++;
 
 			break;
@@ -285,7 +292,7 @@ bool MemoryChunkSystem::LockArea( const uint32 level, uint8* chunkArea, uint8* c
 		loopCount );
 
 	*chunkArea = area;
-	*chunk = foundChunk;
+	*chunk     = foundChunk;
 
 	return true;
 }
