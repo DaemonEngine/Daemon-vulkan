@@ -28,10 +28,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+// #include "../Error.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "ResultCheck.h"
 
-#endif // DISPATCH_RAW_DATA_H
+thread_local VkResult resultCheck;
+
+/* ResultCheck::ResultCheck( const VkResult skipRes, const VkResult res ) {
+	if ( res & resultSuccess ) {
+		return;
+	}
+
+	if ( res & skipRes ) {
+		return;
+	}
+}
+
+ResultCheck& ResultCheck::operator=( const VkResult res ) {
+	if ( res & resultSuccess ) {
+		return;
+	}
+
+	Err( "Vulkan function failed: %s", string_VkResult( res ) );
+}
+
+int ResCheck( const VkResult skipRes, const VkResult res ) {
+	if ( res & resultSuccess ) {
+		return 0;
+	}
+
+	if ( res & skipRes ) {
+		return 1;
+	}
+
+	return -1;
+} */
+
+ResCheck::ResCheck() {
+}
+
+void ResCheck::operator=( const VkResult result ) {
+	ResultCheck( result );
+}

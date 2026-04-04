@@ -28,10 +28,63 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef FENCE_H
+#define FENCE_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <atomic>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+struct Fence;
+
+struct FenceMain {
+	std::atomic<uint64> value;
+	std::atomic<bool>   done = false;
+	uint64              target = 0;
+
+	void  Signal();
+
+	void  Wait( const std::memory_order order = std::memory_order_relaxed );
+
+	FenceMain() = default;
+	FenceMain( const FenceMain& other ) = delete;
+	FenceMain( FenceMain&& other ) = delete;
+
+	Fence Target( const uint64 target );
+
+	void operator=( const FenceMain& other );
+};
+
+struct Fence {
+	std::atomic<uint64>* value;
+	std::atomic<bool>* done;
+	uint64 target = 0;
+
+	void Signal();
+
+	void Wait( const std::memory_order order = std::memory_order_relaxed );
+
+	Fence();
+	Fence( const Fence& other );
+	Fence( Fence&& other );
+
+	Fence( FenceMain& other );
+
+	void operator=( const Fence& other );
+};
+
+struct FenceBool {
+	std::atomic<bool> value;
+
+	void Signal();
+
+	void Wait( const std::memory_order order = std::memory_order_relaxed );
+
+	FenceBool()                         = default;
+	FenceBool( const FenceBool& other ) = delete;
+	FenceBool( FenceBool&& other )      = delete;
+
+	void operator=( const FenceBool& other );
+};
+
+#endif // FENCE_H

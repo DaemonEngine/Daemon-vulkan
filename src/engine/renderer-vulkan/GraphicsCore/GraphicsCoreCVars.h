@@ -28,10 +28,36 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef GRAPHICS_CORE_CVARS_H
+#define GRAPHICS_CORE_CVARS_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "common/Common.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+extern Cvar::Cvar<int>                r_rendererAPI;
+
+extern Cvar::Cvar<std::string>        r_vkVersion;
+
+extern Cvar::Range<Cvar::Cvar<int>>   r_vkCapabilityPack;
+extern Cvar::Cvar<std::string>        r_vkDisabledOptionalFeatures;
+
+extern Cvar::Cvar<int>                r_vkDevice;
+
+extern Cvar::Cvar<int>                r_displayIndex;
+
+extern Cvar::Range<Cvar::Cvar<int>>   r_vkPresentMode;
+extern Cvar::Range<Cvar::Cvar<int>>   r_mode;
+extern Cvar::Cvar<int>                r_customWidth;
+extern Cvar::Cvar<int>                r_customHeight;
+extern Cvar::Modified<Cvar::Cvar<bool>> r_fullscreen;
+extern Cvar::Cvar<bool>               r_noBorder;
+// extern cvar_t*                      r_allowResize;
+
+extern Cvar::Range<Cvar::Cvar<int>>   r_vkGraphicsMaxMemory;
+extern Cvar::Cvar<bool>               r_vkGraphicsMaxMemoryAuto;
+
+extern Cvar::Range < Cvar::Cvar<int>> r_vkVSync;
+extern Cvar::Range < Cvar::Cvar<int>> r_vkExecutionGraphRate;
+
+#endif // GRAPHICS_CORE_CVARS_H

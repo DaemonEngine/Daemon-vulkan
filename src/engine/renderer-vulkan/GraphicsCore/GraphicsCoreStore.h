@@ -28,10 +28,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef GRAPHICS_CORE_STORE_H
+#define GRAPHICS_CORE_STORE_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "Decls.h"
 
-#endif // DISPATCH_RAW_DATA_H
+extern Surface mainSurface;
+
+extern Instance instance;
+
+extern SwapChain mainSwapChain;
+
+extern FeaturesConfig featuresConfig;
+extern EngineConfig   engineConfig;
+
+extern VkPhysicalDevice physicalDevice;
+
+extern VkDevice device;
+
+extern Queue graphicsQueue;
+extern Queue computeQueue;
+extern Queue transferQueue;
+extern Queue transferDLQueue;
+extern Queue sparseQueue;
+
+extern VkDescriptorSetLayout descriptorSetLayout;
+extern VkDescriptorSet descriptorSet;
+
+extern EngineAllocator engineAllocator;
+extern ResourceSystem  resourceSystem;
+
+#endif // GRAPHICS_CORE_STORE_H

@@ -28,10 +28,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef ALIGNED_ATOMIC_H
+#define ALIGNED_ATOMIC_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <atomic>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+#include "../Sys/MemoryInfo.h"
+
+struct AlignedAtomicUint32 {
+	ALIGN_CACHE std::atomic<uint32> value;
+
+	void operator=( const uint32 newValue ) {
+		value.store( newValue, std::memory_order_relaxed );
+	}
+
+	void operator++() {
+		value++;
+	}
+
+	void operator--() {
+		value--;
+	}
+};
+
+struct AlignedAtomicUint64 {
+	ALIGN_CACHE std::atomic<uint64> value;
+
+	void operator=( const uint64 newValue ) {
+		value.store( newValue, std::memory_order_relaxed );
+	}
+
+	void operator++() {
+		value++;
+	}
+
+	void operator--() {
+		value--;
+	}
+};
+
+#endif // ALIGNED_ATOMIC_H

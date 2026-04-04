@@ -28,10 +28,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef ALLOCATOR_H
+#define ALLOCATOR_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Math/NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+class Allocator {
+	public:
+	Allocator() = default;
+	~Allocator() = default;
+
+	virtual byte* Alloc( const uint64 /* size */, const uint64 /* alignment */ ) = 0;
+	virtual void Free( byte* /* memory */ ) = 0;
+};
+
+#endif // ALLOCATOR_H

@@ -28,10 +28,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef TLM_ALLOCATOR_H
+#define TLM_ALLOCATOR_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Math/NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Memory/Allocator.h"
+
+struct TLMAllocator : public Allocator {
+	byte* Alloc( const uint64 size, const uint64 alignment ) override;
+	void Free( byte* memory ) override;
+};
+
+extern thread_local TLMAllocator TLMAlloc;
+
+#endif // TLM_ALLOCATOR_H

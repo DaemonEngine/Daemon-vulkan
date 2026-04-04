@@ -28,10 +28,56 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef CORE_THREAD_MEMORY_H
+#define CORE_THREAD_MEMORY_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../../Math/NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../../Sync/AlignedAtomic.h"
+
+#include "../../Thread/ThreadCommon.h"
+
+#include "../Decls.h"
+
+#include "../Queue.h"
+#include "../Semaphore.h"
+#include "../GraphicsCoreStore.h"
+
+static constexpr uint32 maxExecCmdBuffers = 4;
+
+struct ExecCmdPool {
+	VkCommandPool   cmdPool;
+	VkCommandBuffer cmds[maxExecCmdBuffers];
+	uint64          executionPhase[maxExecCmdBuffers];
+	uint8           allocState;
+};
+
+struct GraphicsCoreMemory {
+	VkCommandPool graphicsCmdPool;
+	VkCommandPool computeCmdPool;
+	VkCommandPool transferCmdPool;
+	VkCommandPool sparseCmdPool;
+
+	ExecCmdPool   execGraphicsCmd;
+	ExecCmdPool   execComputeCmd;
+	ExecCmdPool   execTransferCmd;
+	ExecCmdPool   execSparseCmd;
+};
+
+void InitCmdPools();
+void InitExecCmdPools();
+
+void FreeCmdPools();
+void FreeInstantCmdPools();
+
+constexpr uint32              maxThreadCmdBuffers = 64;
+
+extern    AlignedAtomicUint64 cmdBufferStates[MAX_THREADS];
+extern    thread_local uint64 cmdBufferAllocState;
+
+extern    VkCommandBuffer     cmdBuffers[MAX_THREADS][maxThreadCmdBuffers];
+extern    VkFence             cmdBufferFences[MAX_THREADS][maxThreadCmdBuffers];
+
+extern    thread_local GraphicsCoreMemory GMEM;
+
+#endif // CORE_THREAD_MEMORY_H

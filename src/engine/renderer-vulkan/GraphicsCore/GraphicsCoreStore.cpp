@@ -28,10 +28,44 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "Vulkan.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Surface/Surface.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "Instance.h"
+
+#include "SwapChain.h"
+
+#include "FeaturesConfig.h"
+#include "EngineConfig.h"
+#include "Queue.h"
+
+#include "Memory/EngineAllocator.h"
+#include "ResourceSystem.h"
+
+#include "GraphicsCoreStore.h"
+
+Surface mainSurface;
+
+Instance instance;
+
+SwapChain mainSwapChain;
+
+FeaturesConfig featuresConfig;
+EngineConfig   engineConfig;
+
+VkPhysicalDevice physicalDevice;
+
+VkDevice device;
+
+Queue graphicsQueue;
+Queue computeQueue;
+Queue transferQueue;
+Queue transferDLQueue;
+Queue sparseQueue;
+
+VkDescriptorSetLayout descriptorSetLayout;
+VkDescriptorSet       descriptorSet;
+
+EngineAllocator engineAllocator;
+ResourceSystem  resourceSystem;

@@ -28,10 +28,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef MSG_STREAM_API_H
+#define MSG_STREAM_API_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+constexpr uint32 ENGINE_INIT                      = 0;
+constexpr uint32 ENGINE_GRAPHICS_SETTINGS_CHANGED = 1;
+
+constexpr uint32 CORE_ALLOC_MEMORY_POOL     = 0;
+constexpr uint32 CORE_ALLOC_BUFFER          = 1;
+constexpr uint32 CORE_UPDATE_DESCRIPTOR     = 2;
+constexpr uint32 CORE_BUILD_EXECUTION_GRAPH = 3;
+
+#endif // MSG_STREAM_API_H

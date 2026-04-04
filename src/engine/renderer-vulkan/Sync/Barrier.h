@@ -28,10 +28,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef BARRIER_H
+#define BARRIER_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <atomic>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+#include "../Thread/ThreadMemory.h"
+
+struct Barrier {
+	std::atomic<uint64> threadCount = 0;
+	std::atomic<uint64> genID       = 0;
+
+	bool operator()( const uint32 targetThreadCount );
+
+	bool operator()();
+};
+
+#define barrier( ... ) { \
+	static Barrier syncBarrier; \
+	syncBarrier( __VA_ARGS__ ); \
+}
+
+#define _threadElectOne2( targetThreadCount, ... ) { \
+	static Barrier syncBarrier; \
+	const bool thisThreadElected = syncBarrier( targetThreadCount ); \
+	 \
+	if ( thisThreadElected ) { \
+		__VA_ARGS__ \
+	} \
+}
+
+#define _threadElectOne( ... ) _threadElectOne2( TLM.currentMaxThreads, __VA_ARGS__ )
+
+#define EXPAND( x )                           x
+#define GET_MACRO( _0, _1, name, ... )        name
+#define threadElectOne( ... ) EXPAND( GET_MACRO( __VA_ARGS__, _threadElectOne2, _threadElectOne ) ( __VA_ARGS__ ) )
+
+#endif // BARRIER_H

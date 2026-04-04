@@ -28,10 +28,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef MEMORY_H
+#define MEMORY_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "common/Compiler.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+MALLOC_LIKE void* AllocAligned( const uint64 size, const uint64 alignment );
+void FreeAligned( void* memory );
+
+inline void* Alloc64( const uint64 size ) {
+	return AllocAligned( size, 64 );
+}
+
+#endif // MEMORY_H

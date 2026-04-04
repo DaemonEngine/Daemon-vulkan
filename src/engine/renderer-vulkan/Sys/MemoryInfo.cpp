@@ -28,10 +28,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "MemoryInfo.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#ifdef _MSC_VER
+	#include <windows.h>
+#else
+	#include <unistd.h>
+#endif
 
-#endif // DISPATCH_RAW_DATA_H
+MemoryInfo::MemoryInfo() {
+	#ifdef _MSC_VER
+		SYSTEM_INFO info;
+		GetSystemInfo( &info );
+
+		PAGE_SIZE_DEFAULT = info.dwPageSize;
+		PAGE_SIZE_64 = 64 * 1024;
+		PAGE_SIZE_LARGE = GetLargePageMinimum();
+	#else
+		PAGE_SIZE_DEFAULT = sysconf( _SC_PAGESIZE );
+		PAGE_SIZE_64 = PAGE_SIZE_DEFAULT; // TODO: Can this even be specified on Linux?
+		PAGE_SIZE_LARGE = 0;
+	#endif
+}
+
+MemoryInfo memoryInfo;

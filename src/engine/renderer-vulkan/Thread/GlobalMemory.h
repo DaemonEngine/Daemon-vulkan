@@ -28,10 +28,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef GLOBAL_MEMORY_H
+#define GLOBAL_MEMORY_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <unordered_map>
+#include <atomic>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+#include "../Memory/Allocator.h"
+
+#include "Task.h"
+
+struct GlobalTaskTime {
+	std::atomic<uint64> count = 0;
+	std::atomic<uint64> time = 0;
+};
+
+class GlobalMemory : public Allocator {
+	public:
+	std::unordered_map<Task::TaskFunction, GlobalTaskTime> taskTimes;
+	AccessLock taskTimesLock;
+
+	byte* Alloc( const uint64 size, const uint64 alignment );
+	void Free( byte* memory );
+
+	private:
+};
+
+extern GlobalMemory SM;
+
+#endif // GLOBAL_MEMORY_H

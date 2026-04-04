@@ -28,10 +28,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef FEATURES_CONFIG_MAP_H
+#define FEATURES_CONFIG_MAP_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <string>
+#include <unordered_map>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+#include "../Version.h"
+
+struct FeatureData {
+    uint32      offset;
+	Version     version;
+    const char* extension;
+};
+
+extern std::unordered_map<std::string, FeatureData> featuresConfigMap;
+
+#endif // FEATURES_CONFIG_MAP_H

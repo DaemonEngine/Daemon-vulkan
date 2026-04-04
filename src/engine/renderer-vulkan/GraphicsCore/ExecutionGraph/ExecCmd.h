@@ -28,10 +28,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef EXEC_CMD_H
+#define EXEC_CMD_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../../Math/NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Decls.h"
+
+struct ExecCmd {
+	uint32          cmdID;
+	VkCommandBuffer cmd;
+	QueueType       queueType;
+
+	ExecCmd( const QueueType queueType, VkCommandBuffer* newCmd );
+	~ExecCmd();
+};
+
+#endif // EXEC_CMD_H

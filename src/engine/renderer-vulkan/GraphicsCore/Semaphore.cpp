@@ -28,10 +28,76 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "Vulkan.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "GraphicsCoreStore.h"
+#include "ResultCheck.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "Semaphore.h"
+
+void Semaphore::Init( const uint64 initialValue ) {
+	value = initialValue;
+
+	VkSemaphoreTypeCreateInfo semaphoreTypeInfo {
+		.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE,
+		.initialValue  = value
+	};
+
+	VkSemaphoreCreateInfo     semaphoreInfo {
+		.pNext         = &semaphoreTypeInfo
+	};
+
+	ResultCheck( vkCreateSemaphore( device, &semaphoreInfo, nullptr, &semaphore ) );
+}
+
+void Semaphore::Signal() {
+	VkSemaphoreSignalInfo signalInfo {
+		.semaphore = semaphore,
+		.value     = value
+	};
+
+	ResultCheck( vkSignalSemaphore( device, &signalInfo ) );
+}
+
+bool Semaphore::Wait( const uint64 timeout ) {
+	VkSemaphoreWaitInfo semaphoreWaitInfo {
+		.flags          = 0,
+		.semaphoreCount = 1,
+		.pSemaphores    = &semaphore,
+		.pValues        = &value
+	};
+
+	ResultCheckRet( vkWaitSemaphores( device, &semaphoreWaitInfo, timeout ) );
+
+	return resultCheck == VK_SUCCESS;
+}
+
+uint64 Semaphore::Current() {
+	uint64 out;
+
+	vkGetSemaphoreCounterValue( device, semaphore, &out );
+
+	return out;
+}
+
+VkSemaphoreSubmitInfo Semaphore::GenSubmitInfo( const VkPipelineStageFlags2 stages ) {
+	return VkSemaphoreSubmitInfo {
+		.semaphore = semaphore,
+		.value     = value,
+		.stageMask = stages
+	};
+}
+
+Semaphore Semaphore::operator++() {
+	value++;
+
+	return *this;
+}
+
+Semaphore Semaphore::operator++( int ) {
+	Semaphore out( *this );
+
+	value++;
+
+	return out;
+}

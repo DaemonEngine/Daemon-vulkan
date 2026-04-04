@@ -28,10 +28,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "Barrier.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+bool Barrier::operator()( const uint32 targetThreadCount ) {
+	const uint64 count = threadCount.fetch_add( 1, std::memory_order_relaxed ) + 1;
+	const uint64 gen   = genID.load( std::memory_order_relaxed );
 
-#endif // DISPATCH_RAW_DATA_H
+	if( !( count % targetThreadCount ) ) {
+		genID.store( gen + 1, std::memory_order_relaxed );
+		genID.notify_all();
+
+		return true;
+	}
+
+	genID.wait( gen, std::memory_order_relaxed );
+
+	return false;
+}
+
+bool Barrier::operator()() {
+	return operator()( TLM.currentMaxThreads );
+}

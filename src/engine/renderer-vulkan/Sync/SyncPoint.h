@@ -28,10 +28,57 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef SYNC_POINT_H
+#define SYNC_POINT_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <atomic>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+#include "../Error.h"
+
+#include "Fence.h"
+
+struct SyncPoint {
+	using SyncFunction = void( * )( void* );
+
+	SyncFunction      Execute;
+	void*             data;
+
+	FenceMain         fence;
+	Fence             done;
+	std::atomic<bool> active = false;
+
+	void Access();
+
+	template<typename FunctionType, typename DataType>
+	void Sync( FunctionType func, DataType newData, const uint64 syncCount ) {
+		if ( active.load( std::memory_order_relaxed ) ) {
+			Err( "SyncPoint: tried to start when already active" );
+			return;
+		}
+
+		Execute      = ( SyncFunction ) func;
+		data         = ( void* ) newData;
+		fence.target = fence.value.load( std::memory_order_relaxed ) + syncCount;
+
+		active.store( true, std::memory_order_release );
+	}
+
+	template<typename FunctionType, typename DataType>
+	void Sync( FunctionType func, DataType newData, const uint64 syncCount, Fence& newDone ) {
+		if ( active.load( std::memory_order_relaxed ) ) {
+			Err( "SyncPoint: tried to start when already active" );
+			return;
+		}
+
+		Execute      = ( SyncFunction ) func;
+		data         = ( void* ) newData;
+		fence.target = fence.value.load( std::memory_order_relaxed ) + syncCount;
+		done         = newDone;
+
+		active.store( true, std::memory_order_release );
+	}
+};
+
+#endif // SYNC_POINT_H

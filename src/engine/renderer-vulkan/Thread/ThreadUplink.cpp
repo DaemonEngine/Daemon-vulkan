@@ -28,10 +28,41 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "common/Common.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Error.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "TaskList.h"
+#include "ThreadMemory.h"
+
+#include "ThreadUplink.h"
+
+ThreadUplink threadUplink;
+
+void ThreadUplink::AddCommand( const ThreadUplinkCommand id ) {
+	const uint8 cmdID = pointer.fetch_add( 1, std::memory_order_relaxed );
+
+	while ( commands[cmdID] != CMD_NONE );
+
+	commands[cmdID] = id;
+}
+
+void ThreadUplink::ExecuteCommands() {
+	while ( true ) {
+		switch ( commands[current] ) {
+			case CMD_NONE:
+				return;
+			case CMD_SYNC_THREAD_COUNT:
+				TLM.currentMaxThreads = taskList.currentMaxThreads.load( std::memory_order_relaxed );
+				break;
+			case CMD_ERROR:
+				Sys::Error( error );
+			default:
+				break;
+		}
+
+		commands[current] = CMD_NONE;
+
+		current++;
+	}
+}

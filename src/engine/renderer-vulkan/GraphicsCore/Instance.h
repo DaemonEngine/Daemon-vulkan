@@ -28,10 +28,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef INSTANCE_H
+#define INSTANCE_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "Decls.h"
 
-#endif // DISPATCH_RAW_DATA_H
+class Instance {
+	public:
+	VkInstance instance;
+
+	void Init( const char* engineName, const char* appName );
+};
+
+#endif // INSTANCE_H

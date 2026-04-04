@@ -28,10 +28,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef RESOURCE_SYSTEM_H
+#define RESOURCE_SYSTEM_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../GraphicsShared/MemoryPool.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "Decls.h"
+
+struct ResourceSystem {
+	MemoryPool memoryPoolData;
+	MemoryPool memoryPoolImages;
+	uint64     dedicatedMemorySize;
+
+	bool       hostImageCopy;
+
+	void   Init( uint64 newDedicatedMemorySize );
+
+	Buffer AllocBuffer( const uint64 size, const Buffer::Usage usage = ( Buffer::Usage ) 0 );
+	void   AllocImage( const MemoryRequirements& reqs, const VkImage image, uint64* offset, uint64* size );
+};
+
+#endif // RESOURCE_SYSTEM_H

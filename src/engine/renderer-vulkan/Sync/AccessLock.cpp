@@ -28,10 +28,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "AccessLock.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+bool AccessLock::Lock() {
+	uint8 expected = value.load( std::memory_order_relaxed );
+	uint8 desired;
 
-#endif // DISPATCH_RAW_DATA_H
+	do {
+		if( !expected ) {
+			return false;
+		}
+
+		desired = expected + 1;
+	} while( !value.compare_exchange_strong( expected, desired, std::memory_order_acquire ) );
+
+	return true;
+}
+
+void AccessLock::Unlock() {
+	value.fetch_sub( 1, std::memory_order_release );
+}
+
+bool AccessLock::LockWrite() {
+	const uint8 current = value.fetch_sub( 1, std::memory_order_relaxed );
+
+	if ( current != 1 ) {
+		UnlockWrite();
+		return false;
+	}
+
+	return true;
+}
+
+void AccessLock::UnlockWrite() {
+	value.fetch_add( 1, std::memory_order_release );
+}
+
+void AccessLock::operator=( const AccessLock& other ) {
+	value = other.value.load( std::memory_order_relaxed );
+}

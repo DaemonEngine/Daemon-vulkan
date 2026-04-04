@@ -28,10 +28,50 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef QUEUE_H
+#define QUEUE_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Math/NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Memory/Array.h"
+
+#include "../Sync/AccessLock.h"
+
+#include "Vulkan.h"
+
+#include "Semaphore.h"
+
+#include "Decls.h"
+
+enum QueueType : uint32 {
+	GRAPHICS = VK_QUEUE_GRAPHICS_BIT,
+	COMPUTE  = VK_QUEUE_COMPUTE_BIT,
+	TRANSFER = VK_QUEUE_TRANSFER_BIT,
+	SPARSE   = VK_QUEUE_SPARSE_BINDING_BIT
+};
+
+struct Queue {
+	VkQueue    queue;
+
+	uint32     id;
+	bool       unique;
+
+	QueueType  type;
+	uint32     queueCount;
+	uint32     timestampValidBits;
+	VkExtent3D minImageTransferGranularity;
+
+	Semaphore  executionPhase;
+
+	AccessLock accessLock;
+
+	uint64     Submit( VkCommandBuffer cmd );
+	uint64     SubmitForPresent( VkCommandBuffer cmd, VkSemaphore presentSemaphore );
+};
+
+void             InitQueueConfigs();
+void             InitQueues();
+Array<uint32, 4> GetConcurrentQueues( uint32* count );
+Queue&           GetQueueByType( const QueueType type );
+
+#endif // QUEUE_H

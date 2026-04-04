@@ -28,10 +28,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef TASK_DATA_H
+#define TASK_DATA_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Math/NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+byte* AllocTaskData( const uint16 dataSize );
+
+#endif // TASK_DATA_H

@@ -28,10 +28,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef SYNCTASK_H
+#define SYNCTASK_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+struct Task;
 
-#endif // DISPATCH_RAW_DATA_H
+void SyncTask( Task&& task );
+void SyncTask( Task* task );
+
+#endif // SYNCTASK_H

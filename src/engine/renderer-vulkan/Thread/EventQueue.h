@@ -28,10 +28,64 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef EVENT_QUEUE_H
+#define EVENT_QUEUE_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Memory/Array.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Sync/AccessLock.h"
+
+#include "Task.h"
+
+struct EventRing {
+	static constexpr uint32 sectors    = 8;
+	static constexpr uint32 sectorMask = 7;
+	static constexpr uint32 sectorSize = 64;
+
+	enum EventResult {
+		EVENT_SUCCESS,
+		EVENT_FAIL,
+		EVENT_EXPIRED
+	};
+
+	AccessLock lock;
+
+	uint64     currentTime;
+	uint64     granularity;
+
+	uint32     currentSector;
+
+	Task       events[sectors][sectorSize] {};
+	uint64     allocatedEvents[sectors]    {};
+
+	EventResult AddTask( Task& task, const uint32 ringID );
+	void        Rotate();
+};
+
+struct EventQueue {
+	Array<EventRing, 10> eventRings {
+		EventRing { .granularity = 1_us   },
+		EventRing { .granularity = 8_us   },
+		EventRing { .granularity = 64_us  },
+		EventRing { .granularity = 512_us },
+		EventRing { .granularity = 1_ms   },
+		EventRing { .granularity = 4_ms   },
+		EventRing { .granularity = 32_ms  },
+		EventRing { .granularity = 256_ms },
+		EventRing { .granularity = 2_s    },
+		EventRing { .granularity = 1_m    }
+	};
+
+	const uint64 minGranularity = eventRings[0].granularity;
+
+	std::atomic<bool> exiting   = false;
+
+	void AddTask( Task& task );
+	void Rotate();
+
+	void Shutdown();
+};
+
+extern EventQueue eventQueue;
+
+#endif // EVENT_QUEUE_H

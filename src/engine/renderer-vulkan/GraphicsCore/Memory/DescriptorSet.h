@@ -28,10 +28,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef DESCRIPTOR_SET_H
+#define DESCRIPTOR_SET_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Decls.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../../Math/NumberTypes.h"
+
+void AllocDescriptors( uint32 imageCount, uint32 storageImageCount );
+void UpdateDescriptor( const uint32 id, Image image, const VkImageLayout layout );
+void FreeDescriptors();
+
+#endif // DESCRIPTOR_SET_H

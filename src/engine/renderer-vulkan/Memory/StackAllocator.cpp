@@ -28,10 +28,64 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "StackAllocator.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+StackAllocator::StackAllocator( Allocator* newAllocator ) :
+	allocator( newAllocator ) {
+}
 
-#endif // DISPATCH_RAW_DATA_H
+void StackAllocator::Init( const uint64_t newSize ) {
+	size = ( newSize + 63 ) & ~64;
+	memory = allocator->Alloc( size, 64 );
+
+	persistentIndex = 0;
+	tempIndex = 0;
+}
+
+void StackAllocator::Resize( const uint64_t newSize ) {
+	if ( newSize > persistentIndex + tempIndex ) {
+		Sys::Drop( "StackAllocator: failed to resize: %u bytes > %u persistent bytes + %u temp bytes",
+			newSize, persistentIndex, tempIndex );
+	}
+
+	const uint64_t tempSize = ( newSize + 63 ) & ~64;
+	byte* tempMemory = allocator->Alloc( tempSize, 64 );
+
+	memcpy( tempMemory, memory, persistentIndex );
+	memcpy( tempMemory + ( tempSize - tempIndex ), memory + ( size - tempIndex ), persistentIndex );
+
+	Free();
+
+	memory = tempMemory;
+	size = tempSize;
+}
+
+void StackAllocator::Free() {
+	allocator->Free( memory );
+}
+
+byte* StackAllocator::Alloc( const uint64_t allocationSize, const uint64_t alignment ) {
+	const uint64_t paddedSize = ( allocationSize + alignment - 1 ) & ~alignment;
+
+	if ( paddedSize > size - persistentIndex - tempIndex ) {
+		return nullptr;
+	}
+
+	/* if ( temp ) {
+		tempIndex += paddedSize;
+		return ( void* ) ( memory - tempIndex );
+	} */
+
+	byte* ptr = memory + persistentIndex;
+	persistentIndex += paddedSize;
+
+	return ptr;
+}
+
+void StackAllocator::Free( byte* memory ) {
+	if ( !memory ) {
+		return;
+	}
+
+	allocator->Free( memory );
+}

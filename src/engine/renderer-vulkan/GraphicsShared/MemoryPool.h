@@ -28,10 +28,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef MEMORY_POOL_H
+#define MEMORY_POOL_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#ifdef __cplusplus
+	#define MemoryAddress uint32*
+#else
+	#define MemoryAddress uint64
+#endif
+
+struct MemoryPool {
+	uint64        size;
+	uint32        offset;
+	bool          dedicatedAlloc;
+	MemoryAddress memory;
+	uint32*       mappedMemory;
+};
+
+#endif // MEMORY_POOL_H

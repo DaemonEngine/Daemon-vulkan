@@ -28,10 +28,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "Common.glsl"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+struct Vertex {
+	vec3 position;
+};
 
-#endif // DISPATCH_RAW_DATA_H
+BufferRS restrict VertexCache {
+    Vertex vertices[];
+};
+
+BufferWS restrict IndexCache {
+    uint indices[];
+};
+
+layout ( scalar, push_constant ) uniform Push {
+	VertexCache    vertexCache;
+	IndexCache     indexCache;
+} push;
+
+layout ( location = 0 ) out vec3 outColour;
+
+void main() {
+	Vertex vertex = push.vertexCache.vertices[gl_VertexIndex];
+
+	gl_Position = vec4( vertex.position, 1.0 );
+
+	outColour = vec3( 0.0, 1.0, 0.0 );
+}

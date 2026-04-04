@@ -28,10 +28,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "GlobalMemory.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../SrcDebug/Tag.h"
 
-#endif // DISPATCH_RAW_DATA_H
+GlobalMemory SM;
+
+byte* GlobalMemory::Alloc( const uint64 size, const uint64 alignment ) {
+	Q_UNUSED( size );
+	Q_UNUSED( alignment );
+	return nullptr;
+}
+
+void GlobalMemory::Free( byte* memory ) {
+	Q_UNUSED( memory );
+}

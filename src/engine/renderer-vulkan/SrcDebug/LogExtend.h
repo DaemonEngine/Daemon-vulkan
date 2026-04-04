@@ -28,10 +28,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef LOGEXTEND_H
+#define LOGEXTEND_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <source_location>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "common/Common.h"
+
+extern Cvar::Cvar<bool> r_vkLogExtend;
+
+extern Cvar::Cvar<bool> r_vkLogExtendWarn;
+extern Cvar::Cvar<bool> r_vkLogExtendNotice;
+extern Cvar::Cvar<bool> r_vkLogExtendVerbose;
+extern Cvar::Cvar<bool> r_vkLogExtendDebug;
+
+/* namespace Log {
+    inline Str::StringRef AddSrc( Str::StringRef format, const bool extend, const std::source_location& loc ) {
+        if ( r_vkLogExtend.Get() || extend ) {
+            return format + Str::Format( " (file: %s, line: %u:%u, func: %s",
+                loc.file_name(), loc.line(), loc.column(), loc.function_name() );
+        }
+
+        return format;
+    }
+
+	#define LogWarnExt( format, ... ) ( Log::Warn( Log::AddSrc( format, r_vkLogExtendWarn.Get(), std::source_location::current() ), __VA_ARGS__ ) )
+	#define NoticeExt( format, ... ) ( Log::Warn( Log::AddSrc( format, r_vkLogExtendNotice.Get(), std::source_location::current() ), __VA_ARGS__ ) )
+	#define VerboseExt( format, ... ) ( Log::Warn( Log::AddSrc( format, r_vkLogExtendVerbose.Get(), std::source_location::current() ), __VA_ARGS__ ) )
+	#define LogDebugExt( format, ... ) ( Log::Warn( Log::AddSrc( format, r_vkLogExtendDebug.Get(), std::source_location::current() ), __VA_ARGS__ ) )
+} */
+
+#endif // LOGEXTEND_H

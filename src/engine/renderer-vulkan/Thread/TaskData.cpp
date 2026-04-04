@@ -28,10 +28,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "TaskList.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "TaskData.h"
 
-#endif // DISPATCH_RAW_DATA_H
+byte* AllocTaskData( const uint16 dataSize ) {
+	return taskList.AllocTaskData( dataSize );
+}

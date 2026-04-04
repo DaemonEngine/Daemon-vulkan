@@ -28,10 +28,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "Thread/ThreadUplink.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "Error.h"
 
-#endif // DISPATCH_RAW_DATA_H
+std::string error;
+
+void Error( Str::StringRef err ) {
+	error = err;
+
+	threadUplink.AddCommand( ThreadUplink::CMD_ERROR );
+}

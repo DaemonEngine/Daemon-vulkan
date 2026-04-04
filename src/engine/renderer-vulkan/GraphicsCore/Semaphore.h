@@ -28,10 +28,27 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef SEMAPHORE_H
+#define SEMAPHORE_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "Decls.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+struct Semaphore {
+	uint64                value;
+
+	VkSemaphore           semaphore;
+
+	void                  Init( const uint64 initialValue = 0 );
+	void                  Signal();
+	bool                  Wait( const uint64 timeout = UINT64_MAX );
+	uint64                Current();
+
+	VkSemaphoreSubmitInfo GenSubmitInfo( const VkPipelineStageFlags2 stages );
+
+	Semaphore             operator++();
+	Semaphore             operator++( int );
+};
+
+#endif // SEMAPHORE_H

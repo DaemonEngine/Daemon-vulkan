@@ -28,10 +28,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "FeaturesConfig.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "GraphicsCoreStore.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "Memory/EngineAllocator.h"
+#include "ResourceSystem.h"
+
+void ResourceSystem::Init( uint64 newDedicatedMemorySize ) {
+	hostImageCopy    = featuresConfig.hostImageCopy;
+
+	memoryPoolData   = engineAllocator.AllocMemoryPool( MemoryHeap::ENGINE, 1ull * 600 * 1024 * 1024, false );
+	memoryPoolImages = engineAllocator.AllocMemoryPool( MemoryHeap::ENGINE, 1ull * 1 * 1024 * 1024,   true );
+}
+
+Buffer ResourceSystem::AllocBuffer( const uint64 size, const Buffer::Usage usage ) {
+	return engineAllocator.AllocBuffer( MemoryHeap::ENGINE, memoryPoolData, GetBufferRequirements( MemoryHeap::ENGINE, size, usage ), usage );
+}
+
+void ResourceSystem::AllocImage( const MemoryRequirements& reqs, const VkImage image, uint64* offset, uint64* size ) {
+	return engineAllocator.AllocImage( memoryPoolImages, reqs, image, offset, size );
+}

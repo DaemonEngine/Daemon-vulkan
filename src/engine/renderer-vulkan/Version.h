@@ -28,10 +28,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef VERSION_H
+#define VERSION_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <string>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "Math/NumberTypes.h"
+
+struct Version {
+	uint32 major;
+	uint32 minor;
+	uint32 patch;
+
+	std::string FormatVersion() const;
+};
+
+std::strong_ordering operator<=>( const Version& lhs, const Version& rhs );
+
+constexpr Version DAEMON_VULKAN_VERSION { 0, 14, 0 };
+
+#endif // VERSION_H

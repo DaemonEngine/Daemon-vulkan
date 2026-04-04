@@ -28,10 +28,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "SyncPoint.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+void SyncPoint::Access() {
+	if ( !active.load( std::memory_order_relaxed ) ) {
+		return;
+	}
 
-#endif // DISPATCH_RAW_DATA_H
+	Execute( data );
+	fence.Signal();
+
+	fence.Wait();
+
+	bool expected = true;
+	if ( active.compare_exchange_strong( expected, false ) ) {
+		done.Signal();
+	}
+}

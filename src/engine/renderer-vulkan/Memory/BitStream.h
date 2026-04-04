@@ -28,10 +28,41 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef BIT_STREAM_H
+#define BIT_STREAM_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Math/NumberTypes.h"
+#include "../Math/Bit.h"
 
-#endif // DISPATCH_RAW_DATA_H
+uint8  BitRead8(  const uint8*  stream, const uint32 offset, const uint32 size );
+uint16 BitRead16( const uint16* stream, const uint32 offset, const uint32 size );
+uint32 BitRead32( const uint32* stream, const uint32 offset, const uint32 size );
+uint64 BitRead64( const uint64* stream, const uint32 offset, const uint32 size );
+
+void BitWrite8(  uint8*  stream, const uint32 offset, const uint32 size, const uint8  value );
+void BitWrite16( uint16* stream, const uint32 offset, const uint32 size, const uint16 value );
+void BitWrite32( uint32* stream, const uint32 offset, const uint32 size, const uint32 value );
+void BitWrite64( uint64* stream, const uint32 offset, const uint32 size, const uint64 value );
+void BitWrite(   void*   stream, const uint32 offset, const uint32 size, const uint64 value );
+
+struct BitStream {
+	uint64* memory;
+	uint32  offset      = 0;
+	uint32  elementSize = 0;
+
+	BitStream( const uint32 newElementSize = 0 );
+
+	BitStream( void* newMemory, const uint32 newElementSize = 0 );
+
+	uint8 Read8(   const uint32 size );
+	uint16 Read16( const uint32 size );
+	uint32 Read32( const uint32 size );
+	uint64 Read64( const uint32 size );
+
+	void Write( const uint8 value,  const uint32 size );
+	void Write( const uint16 value, const uint32 size );
+	void Write( const uint32 value, const uint32 size );
+	void Write( const uint64 value, const uint32 size );
+};
+
+#endif // BIT_STREAM_H

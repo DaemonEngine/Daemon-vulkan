@@ -28,10 +28,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef GRAPHICS_INIT_H
+#define GRAPHICS_INIT_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+void InitGraphicsEngine();
 
-#endif // DISPATCH_RAW_DATA_H
+#endif // GRAPHICS_INIT_H
