@@ -95,7 +95,9 @@ void EventQueue::AddTask( Task& task ) {
 
 				eventRing.lock.UnlockWrite();
 
-				break;
+				if ( res != EventRing::EVENT_EXPIRED ) {
+					break;
+				}
 			}
 		}
 	} else {
@@ -113,6 +115,7 @@ void EventQueue::AddTask( Task& task ) {
 
 			return;
 		case EventRing::EVENT_EXPIRED:
+			task.time = 0;
 			taskList.AddTask( task, {} );
 
 			return;
