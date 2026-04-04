@@ -45,6 +45,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #extension GL_KHR_shader_subgroup_quad             : require
 #extension GL_KHR_shader_subgroup_rotate           : require
 
+#extension GL_EXT_shader_image_load_formatted      : require
+
+#extension GL_EXT_maximal_reconvergence            : require
+
 // #extension GL_KHR_subgroupuniform_qualifier : require
 
 // #extension GL_EXT_shader_quad_control : require
