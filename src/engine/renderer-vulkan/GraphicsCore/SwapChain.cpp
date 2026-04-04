@@ -259,7 +259,7 @@ void SwapChain::Init( const VkInstance instance ) {
 
 	res = vkGetSwapchainImagesKHR( device, swapChain, &imageCount, swapchainImages.memory );
 
-	for ( uint32 i = 0; i < images.elements; i++ ) {
+	for ( uint32 i = 0; i < images.size; i++ ) {
 		images[i].Init( swapchainImages[i], format );
 
 		VkSemaphoreTypeCreateInfo semaphoreTypeInfo {
