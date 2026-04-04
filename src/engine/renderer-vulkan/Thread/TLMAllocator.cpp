@@ -28,10 +28,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "ThreadMemory.h"
+#include "TLMAllocator.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+thread_local TLMAllocator TLMAlloc;
 
-#endif // DISPATCH_RAW_DATA_H
+byte* TLMAllocator::Alloc( const uint64 size, const uint64 alignment ) {
+	return TLM.Alloc( size, alignment );
+}
+
+void TLMAllocator::Free( byte* memory ) {
+	TLM.Free( memory );
+}

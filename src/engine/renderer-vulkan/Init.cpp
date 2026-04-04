@@ -1,4 +1,4 @@
-/*
+﻿/*
 =============================================================================
 Daemon-Vulkan BSD Source Code
 Copyright (c) 2025-2026 Reaper
@@ -28,10 +28,54 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "common/Common.h"
+#include "qcommon/qcommon.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "engine/framework/CvarSystem.h"
+#include "engine/framework/System.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "Thread/ThreadMemory.h"
+#include "Thread/TaskList.h"
+#include "Memory/MemoryChunkSystem.h"
+#include "Memory/SysAllocator.h"
+#include "MiscCVarStore.h"
+#include "../RefAPI.h"
+
+#include "Surface/Surface.h"
+
+#include "GraphicsCore/Init.h"
+#include "GraphicsCore/GraphicsCoreStore.h"
+
+static void InitTLM() {
+	TLM.Init();
+}
+
+void Init( WindowConfig* windowConfig ) {
+	sysAllocator.Init();
+	taskList.Init();
+
+	std::string cfg = r_vkMemoryChunkConfig.Get();
+	Task initMemTask { &InitMemoryChunkSystemConfig, cfg };
+
+	FenceMain initTLMFence;
+	taskList.AddTasks( { initMemTask }, { Task { &InitTLM, initTLMFence }.ThreadMaskAll(), initMemTask } );
+
+	mainSurface.Init();
+
+	windowConfig->displayWidth  = mainSurface.width;
+	windowConfig->displayHeight = mainSurface.height;
+	windowConfig->displayAspect = ( float ) windowConfig->displayWidth / windowConfig->displayHeight;
+	windowConfig->vidWidth      = mainSurface.screenWidth;
+	windowConfig->vidHeight     = mainSurface.screenHeight;
+
+	IN_Init( mainSurface.window );
+
+	initTLMFence.Wait();
+
+	Log::Notice( "Large page size: %u", memoryInfo.PAGE_SIZE_LARGE );
+
+	Cvar::Latch( r_vkMemoryPageSize );
+
+	Task initGraphicsEngineTask { &InitGraphicsEngine };
+	taskList.AddTasks( { initGraphicsEngineTask } );
+}

@@ -28,10 +28,73 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "engine/qcommon/qcommon.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Shared/Timer.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Error.h"
+
+#include "../Thread/TaskList.h"
+#include "../Sync/Fence.h"
+
+#include "GraphicsCoreStore.h"
+#include "Instance.h"
+
+#include "PhysicalDevice.h"
+
+#include "EngineConfig.h"
+
+#include "Memory/DescriptorSet.h"
+#include "Memory/EngineAllocator.h"
+#include "ResourceSystem.h"
+
+#include "Init.h"
+
+#include "SwapChain.h"
+#include "Vulkan.h"
+
+#include "Memory/CoreThreadMemory.h"
+void InitGraphicsEngine() {
+	instance.Init( "Daemon-vulkan", CLIENT_WINDOW_TITLE );
+
+	std::string foundQueues = "Found queues: graphics (present: true)";
+
+	uint32 presentSupported;
+	vkGetPhysicalDeviceSurfaceSupportKHR( physicalDevice, graphicsQueue.id, mainSwapChain.surface, &presentSupported );
+
+	if ( !presentSupported ) {
+		Err( "Graphics queue doesn't support present" );
+		return;
+	}
+
+	if ( computeQueue.unique ) {
+		foundQueues += Str::Format( ", async compute (present: %s)", ( bool ) presentSupported );
+	}
+
+	if ( transferQueue.unique ) {
+		foundQueues += Str::Format( ", async transfer" );
+	}
+
+	if ( sparseQueue.unique ) {
+		foundQueues += Str::Format( ", async sparse binding" );
+	}
+
+	Log::Notice( foundQueues );
+
+	AllocDescriptors( engineConfig.maxImages, engineConfig.maxStorageImages );
+
+	engineAllocator.Init();
+
+	InitCmdPools();
+
+	FenceMain initExecCmdFence;
+	Task      initExecCmdTask { &InitExecCmdPools, initExecCmdFence };
+
+	taskList.AddTask( initExecCmdTask.ThreadMaskAllOthers() );
+
+	InitExecCmdPools();
+
+	resourceSystem.Init( 0 );
+
+	initExecCmdFence.Wait();
+}

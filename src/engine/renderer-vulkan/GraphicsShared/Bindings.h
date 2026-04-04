@@ -28,10 +28,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef BINDINGS_H
+#define BINDINGS_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+constexpr uint32 BIND_STORAGE_IMAGES = 0;
+constexpr uint32 BIND_IMAGES = 1;
+
+#endif // BINDINGS_H

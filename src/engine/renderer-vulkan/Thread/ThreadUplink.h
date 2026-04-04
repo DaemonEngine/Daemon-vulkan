@@ -28,10 +28,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef THREAD_UPLINK_H
+#define THREAD_UPLINK_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <atomic>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+class ThreadUplink {
+	public:
+	enum ThreadUplinkCommand {
+		CMD_NONE,
+		CMD_SYNC_THREAD_COUNT,
+		CMD_ERROR
+	};
+
+	static constexpr uint32 MAX_COMMANDS = 256;
+
+	void AddCommand( const ThreadUplinkCommand id );
+	void ExecuteCommands();
+
+	private:
+	ThreadUplinkCommand commands[MAX_COMMANDS] {};
+	std::atomic<uint8> pointer = 0;
+	uint8 current = 0;
+};
+
+extern ThreadUplink threadUplink;
+
+#endif // THREAD_UPLINK_H

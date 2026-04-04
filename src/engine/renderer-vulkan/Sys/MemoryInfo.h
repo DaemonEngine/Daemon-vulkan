@@ -28,10 +28,38 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef MEMORY_INFO_H
+#define MEMORY_INFO_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <new>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+// Clang only got std::hardware_destructive_interference_size in clang 19, but our CI uses clang 18
+#if !defined(__clang__)
+	constexpr uint64 CACHE_LINE_SIZE = std::hardware_destructive_interference_size;
+#else
+	constexpr uint64 CACHE_LINE_SIZE = 64;
+#endif
+
+#define ALIGN_CACHE alignas( CACHE_LINE_SIZE )
+
+namespace PageSize {
+	enum PageSize {
+		SIZE_DEFAULT,
+		SIZE_64,
+		SIZE_LARGE
+	};
+}
+
+struct MemoryInfo {
+	uint64 PAGE_SIZE_DEFAULT;
+	uint64 PAGE_SIZE_64;
+	uint64 PAGE_SIZE_LARGE;
+
+	MemoryInfo();
+};
+
+extern MemoryInfo memoryInfo;
+
+#endif // MEMORY_INFO_H

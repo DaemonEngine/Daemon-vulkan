@@ -28,10 +28,67 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef GRAPHICS_CORE_DECLS_H
+#define GRAPHICS_CORE_DECLS_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Math/NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#define VK_DEFINE_HANDLE(object) typedef struct object##_T* object;
+#define VK_DEFINE_NON_DISPATCHABLE_HANDLE(object) typedef struct object##_T *object;
+
+class  Instance;
+class  Surface;
+struct SwapChain;
+
+struct EngineConfig;
+struct FeaturesConfig;
+
+struct VkAllocationCallbacks;
+
+struct Semaphore;
+
+struct VkPhysicalDeviceProperties2;
+struct VkPhysicalDeviceFeatures2;
+struct VkDeviceCreateInfo;
+
+struct VkImageCreateInfo;
+
+VK_DEFINE_HANDLE( VkInstance );
+VK_DEFINE_HANDLE( VkPhysicalDevice );
+VK_DEFINE_HANDLE( VkDevice );
+VK_DEFINE_HANDLE( VkQueue );
+
+VK_DEFINE_HANDLE( VkCommandBuffer );
+
+VK_DEFINE_NON_DISPATCHABLE_HANDLE( VkSurfaceKHR )
+VK_DEFINE_NON_DISPATCHABLE_HANDLE( VkSwapchainKHR )
+
+VK_DEFINE_NON_DISPATCHABLE_HANDLE( VkDescriptorSetLayout )
+VK_DEFINE_NON_DISPATCHABLE_HANDLE( VkDescriptorSet )
+
+VK_DEFINE_NON_DISPATCHABLE_HANDLE( VkBuffer )
+VK_DEFINE_NON_DISPATCHABLE_HANDLE( VkImage )
+
+VK_DEFINE_NON_DISPATCHABLE_HANDLE( VkPipelineLayout )
+VK_DEFINE_NON_DISPATCHABLE_HANDLE( VkPipeline )
+VK_DEFINE_NON_DISPATCHABLE_HANDLE( VkCommandPool )
+
+VK_DEFINE_NON_DISPATCHABLE_HANDLE( VkFence )
+VK_DEFINE_NON_DISPATCHABLE_HANDLE( VkSemaphore )
+
+using VkPipelineStageFlags2     = uint64;
+using VkCommandBufferUsageFlags = uint32;
+
+struct VkSemaphoreSubmitInfo;
+
+enum   QueueType : uint32;
+
+struct Queue;
+
+class  EngineAllocator;
+struct ResourceSystem;
+
+struct Buffer;
+struct Image;
+
+#endif // GRAPHICS_CORE_DECLS_H

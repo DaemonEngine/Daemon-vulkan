@@ -28,10 +28,51 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef ITERATOR_SEQ_H
+#define ITERATOR_SEQ_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+template<typename T>
+struct IteratorSeq {
+	T* ptr;
 
-#endif // DISPATCH_RAW_DATA_H
+	constexpr IteratorSeq( T* newPtr ) :
+		ptr( newPtr ) {
+	}
+
+	constexpr T& operator*() const {
+		return *ptr;
+	}
+
+	constexpr T* operator->() {
+		return ptr;
+	}
+
+	constexpr ptrdiff_t operator-( const IteratorSeq& other ) const {
+		return ptr - other.ptr;
+	}
+
+	constexpr IteratorSeq& operator++() {
+		ptr++;
+		return *this;
+	}
+
+	constexpr IteratorSeq operator++( int ) {
+		IteratorSeq current = *this;
+		++( *this );
+		return current;
+	}
+
+	friend constexpr bool operator==( const IteratorSeq& lhs, const IteratorSeq& rhs ) {
+		return lhs.ptr == rhs.ptr;
+	}
+
+	friend constexpr bool operator!=( const IteratorSeq& lhs, const IteratorSeq& rhs ) {
+		return lhs.ptr != rhs.ptr;
+	}
+
+	friend constexpr bool operator<( const IteratorSeq& lhs, const IteratorSeq& rhs ) {
+		return lhs.ptr < rhs.ptr;
+	}
+};
+
+#endif // ITERATOR_SEQ_H

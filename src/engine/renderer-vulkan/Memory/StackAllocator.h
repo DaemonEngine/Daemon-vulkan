@@ -28,10 +28,34 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef STACK_ALLOCATOR_H
+#define STACK_ALLOCATOR_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "common/Common.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "Memory.h"
+#include "Allocator.h"
+#include "../Thread/TLMAllocator.h"
+
+class StackAllocator : public Allocator {
+	public:
+	StackAllocator( Allocator* newAllocator = &TLMAlloc );
+	~StackAllocator() = default;
+
+	void Init( const uint64_t newSize );
+	void Resize( const uint64_t newSize );
+	void Free();
+
+	byte* Alloc( const uint64_t allocationSize, const uint64_t alignment ) override;
+	void Free( byte* memory ) override;
+
+	private:
+	uint64_t size;
+	byte* memory;
+	Allocator* allocator;
+
+	uint64_t persistentIndex;
+	uint64_t tempIndex;
+};
+
+#endif // STACK_ALLOCATOR_H

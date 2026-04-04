@@ -28,10 +28,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef SWAP_CHAIN_H
+#define SWAP_CHAIN_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "Decls.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+#include "../Memory/DynamicArray.h"
+
+#include "Image.h"
+
+#include "GraphicsResource.h"
+
+namespace PresentMode {
+	enum PresentMode {
+		IMMEDIATE,             // VK_PRESENT_MODE_IMMEDIATE_KHR
+		SCANOUT_ONE,           // VK_PRESENT_MODE_MAILBOX_KHR
+		SCANOUT_FIRST,         // VK_PRESENT_MODE_FIFO_KHR
+		SCANOUT_FIRST_RELAXED, // VK_PRESENT_MODE_FIFO_RELAXED_KHR
+		SCANOUT_LATEST         // VK_PRESENT_MODE_FIFO_LATEST_READY_KHR
+	};
+}
+
+struct SwapChain : public GraphicsResource {
+	VkSurfaceKHR   surface;
+	VkSwapchainKHR swapChain;
+
+	uint32         imageCount;
+
+	DynamicArray<Image> images;
+	DynamicArray<VkSemaphore> presentSemaphores;
+
+	void Init( const VkInstance instance );
+	void Free() override;
+
+	uint32 AcquireNextImage( const uint64 timeout, VkFence fence, VkSemaphore semaphore );
+};
+
+#endif // SWAP_CHAIN_H

@@ -28,10 +28,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef MEMORY_CHUNK_H
+#define MEMORY_CHUNK_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "../Math/NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Sync/AlignedAtomic.h"
+
+struct MemoryChunk {
+	uint8 level;
+	uint8 chunk;
+	uint8 chunkArea;
+	uint32 size;
+	byte* memory;
+};
+
+struct MemoryAreaConfig {
+	uint64 chunkSize;
+	uint32 chunks;
+	uint32 chunkAreas;
+};
+
+struct MemoryArea {
+	MemoryAreaConfig config;
+
+	byte* memory;
+	AlignedAtomicUint64* chunkLocks; // 1 - locked
+};
+
+constexpr uint32 MAX_MEMORY_AREAS = 3;
+
+struct MemoryChunkConfig {
+	MemoryAreaConfig areas[MAX_MEMORY_AREAS];
+};
+
+constexpr uint64 memoryChunkConfigRequired[][2] {
+	{ 16 * 1024, 640 }, { 1024 * 1024, 640 }, { 64 * 1024 * 1024, 16 }
+};
+constexpr const char* defaultMemoryChunkConfig = "16:640 1024:640 65536:16";
+
+#endif // MEMORY_CHUNK_H

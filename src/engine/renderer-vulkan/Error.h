@@ -1,4 +1,4 @@
-/*
+﻿/*
 =============================================================================
 Daemon-Vulkan BSD Source Code
 Copyright (c) 2025-2026 Reaper
@@ -28,10 +28,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include <string>
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "common/String.h"
 
-#endif // DISPATCH_RAW_DATA_H
+extern std::string error;
+
+void Error( Str::StringRef err );
+
+#define Err( message, ... ) Error( Str::Format( message, ##__VA_ARGS__ ) )

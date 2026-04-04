@@ -28,10 +28,60 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef SYS_ALLOCATOR_H
+#define SYS_ALLOCATOR_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <atomic>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+#include "Allocator.h"
+
+class SysAllocator : public Allocator {
+	public:
+	SysAllocator() = default;
+	~SysAllocator() = default;
+
+	void Init();
+
+	byte* Alloc( const uint64 size, const uint64 alignment ) override;
+	void Free( byte* memory ) override;
+
+	private:
+	struct AllocationRecord {
+		uint64 alignment;
+
+		byte* memory;
+
+		uint32 pageCount;
+		uint8 id;
+
+		char source[107];
+	};
+
+	static constexpr uint32 MAX_THREAD_ALLOCATIONS = 256;
+	AllocationRecord allocations[MAX_THREAD_ALLOCATIONS];
+
+	static constexpr uint32 MAX_THREAD_ALLOCATION_SYNC_VARS = MAX_THREAD_ALLOCATIONS / 64;
+	static_assert( MAX_THREAD_ALLOCATION_SYNC_VARS * 64 == MAX_THREAD_ALLOCATIONS,
+		"MAX_THREAD_ALLOCATIONS must be a multiple of 64" );
+	std::atomic<uint64> availableAllocations[MAX_THREAD_ALLOCATION_SYNC_VARS];
+
+	std::atomic<uint32> currentAllocations;
+	std::atomic<uint32> currentAllocatedSize;
+	std::atomic<uint32> currentAllocatedPages;
+
+	#ifdef _MSC_VER
+		uint32 allocationFlags;
+		uint32 allocationProtection;
+	#else
+		int    allocationFlags;
+		int    allocationProtection;
+	#endif
+
+	uint64 pageSize;
+};
+
+extern SysAllocator sysAllocator;
+
+#endif // SYS_ALLOCATOR_H

@@ -28,10 +28,23 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef ACCESS_LOCK_H
+#define ACCESS_LOCK_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <atomic>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+struct AccessLock {
+	std::atomic<uint32> value = 1;
+
+	bool Lock();
+	void Unlock();
+
+	bool LockWrite();
+	void UnlockWrite();
+
+	void operator=( const AccessLock& other );
+};
+
+#endif // ACCESS_LOCK_H

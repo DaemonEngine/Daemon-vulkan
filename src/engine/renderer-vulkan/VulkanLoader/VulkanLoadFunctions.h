@@ -28,10 +28,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef VULKAN_LOAD_FUNCTIONS_H
+#define VULKAN_LOAD_FUNCTIONS_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "Vulkan.h"
 
-#endif // DISPATCH_RAW_DATA_H
+void VulkanLoaderInit();
+void VulkanLoaderFree();
+
+void VulkanLoadInstanceFunctions( VkInstance instance );
+
+void VulkanLoadDeviceFunctions( VkDevice device );
+
+#endif // VULKAN_LOAD_FUNCTIONS_H

@@ -28,10 +28,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "Task.h"
+#include "TaskList.h"
+#include "ThreadMemory.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "SyncTask.h"
 
-#endif // DISPATCH_RAW_DATA_H
+void SyncTask( Task&& task ) {
+	TLM.syncTimer.Start();
+
+	FenceMain syncFence;
+	task.complete = syncFence;
+
+	taskList.AddTask( task );
+
+	syncFence.Wait();
+
+	TLM.syncTimer.Stop();
+};
+
+void SyncTask( Task* task ) {
+	SyncTask( std::move( *task ) );
+};

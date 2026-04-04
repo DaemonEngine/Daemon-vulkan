@@ -1,4 +1,4 @@
-/*
+﻿/*
 =============================================================================
 Daemon-Vulkan BSD Source Code
 Copyright (c) 2025-2026 Reaper
@@ -28,10 +28,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef MISC_CVARSTORE_H
+#define MISC_CVARSTORE_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "common/Common.h"
 
-#endif // DISPATCH_RAW_DATA_H
+extern Cvar::Callback<Cvar::Range<Cvar::Cvar<int>>> r_vkThreadCount;
+
+extern Cvar::Cvar<std::string> r_vkMemoryChunkConfig;
+
+extern Cvar::Range<Cvar::Cvar<int>> r_vkMemoryPageSize;
+
+#endif // MISC_CVARSTORE_H

@@ -28,10 +28,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "common/Common.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "Version.h"
 
-#endif // DISPATCH_RAW_DATA_H
+std::string Version::FormatVersion() const {
+	return Str::Format( "%u.%u.%u", major, minor, patch );
+}
+
+std::strong_ordering operator<=>( const Version& lhs, const Version& rhs ) {
+	std::strong_ordering cmp = lhs.major <=> rhs.major;
+
+	if ( cmp != std::strong_ordering::equal ) {
+		cmp = lhs.minor <=> rhs.minor;
+	}
+
+	if ( cmp != std::strong_ordering::equal ) {
+		cmp = lhs.patch <=> rhs.patch;
+	}
+
+	return cmp;
+}

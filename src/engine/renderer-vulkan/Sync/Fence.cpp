@@ -28,10 +28,79 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "Fence.h"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+void FenceMain::Signal() {
+	const uint64 current = value.fetch_add( 1, std::memory_order_relaxed ) + 1;
 
-#endif // DISPATCH_RAW_DATA_H
+	if ( current >= target ) {
+		done.store( true, std::memory_order_relaxed );
+		done.notify_all();
+	}
+}
+
+void FenceMain::Wait( const std::memory_order order ) {
+	done.wait( false, order );
+}
+
+Fence FenceMain::Target( const uint64 target ) {
+	Fence fence { *this };
+	fence.target = target;
+	return fence;
+}
+
+void FenceMain::operator=( const FenceMain& other ) {
+	value  = other.value.load( std::memory_order_relaxed );
+	done   = other.done.load( std::memory_order_relaxed );
+	target = other.target;
+}
+
+Fence::Fence() :
+	value( nullptr ),
+	done( nullptr ) {
+}
+
+Fence::Fence( const Fence& other ) :
+	value( other.value ),
+	done( other.done ),
+	target( other.target ) {
+}
+
+Fence::Fence( Fence&& other ) :
+	value( other.value ),
+	done( other.done ),
+	target( other.target ) {
+}
+
+Fence::Fence( FenceMain& other ) :
+	value( &other.value ),
+	done( &other.done ),
+	target( other.target ) {
+}
+
+void Fence::operator=( const Fence& other ) {
+	value = other.value;
+	done = other.done;
+	target = other.target;
+}
+
+void Fence::Signal() {
+	if ( !value ) {
+		return;
+	}
+
+	const uint64 current = value->fetch_add( 1, std::memory_order_relaxed ) + 1;
+
+	if ( current >= target ) {
+		done->store( true, std::memory_order_relaxed );
+		done->notify_all();
+	}
+}
+
+void Fence::Wait( const std::memory_order order ) {
+	if ( !value ) {
+		return;
+	}
+
+	done->wait( false, order );
+}

@@ -28,10 +28,32 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef SURFACE_H
+#define SURFACE_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <SDL3/SDL.h>
 
-#endif // DISPATCH_RAW_DATA_H
+#ifdef _MSC_VER
+	#include <Windows.h>
+#endif
+
+class Surface {
+	public:
+	SDL_Window* window;
+
+	#ifdef _MSC_VER
+		HMONITOR hmonitor;
+	#endif
+
+	int         width;
+	int         height;
+
+	int         screenWidth;
+	int         screenHeight;
+
+	void Init();
+
+	~Surface();
+};
+
+#endif // SURFACE_H

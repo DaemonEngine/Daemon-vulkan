@@ -28,10 +28,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef GRAPHICS_RESOURCE_H
+#define GRAPHICS_RESOURCE_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+struct GraphicsResource {
+	virtual void Free() = 0;
+};
 
-#endif // DISPATCH_RAW_DATA_H
+#endif // GRAPHICS_RESOURCE_H

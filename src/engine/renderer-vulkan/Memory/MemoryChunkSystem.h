@@ -28,10 +28,47 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef MEMORY_CHUNK_SYSTEM_H
+#define MEMORY_CHUNK_SYSTEM_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <atomic>
+#include <iostream>
+#include <thread>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+#include "../Math/Bit.h"
+#include "../Shared/Timer.h"
+#include "../SrcDebug/Tag.h"
+#include "Allocator.h"
+
+#include "MemoryChunk.h"
+
+class MemoryChunkSystem :
+	public Tag {
+	
+	public:
+	MemoryChunkConfig config;
+	MemoryArea memoryAreas[MAX_MEMORY_AREAS];
+
+	MemoryChunkSystem( Allocator* newAllocator );
+	~MemoryChunkSystem();
+
+	void InitConfig( const char* configText );
+
+	MemoryChunk Alloc( uint64 size );
+	void Free( MemoryChunk* memoryChunk );
+
+	void SizeToLevel( const uint64 size, uint32* level, uint32* count );
+
+	private:
+	Allocator* allocator;
+
+	bool LockArea( const uint32 level, uint8* chunkArea, uint8* chunk );
+};
+
+void InitMemoryChunkSystemConfig( std::string* config );
+
+extern MemoryChunkSystem memoryChunkSystem;
+
+#endif // MEMORY_CHUNK_SYSTEM_H

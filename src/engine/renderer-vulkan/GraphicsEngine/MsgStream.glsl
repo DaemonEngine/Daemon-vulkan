@@ -28,10 +28,45 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#include "Common.glsl"
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+layout ( local_size_x = 64, local_size_y = 1, local_size_z = 1 ) in;
 
-#endif // DISPATCH_RAW_DATA_H
+BufferRS restrict MsgStreamRead {
+	uint msgStream[];
+};
+
+BufferWS restrict MsgStreamWrite {
+	uint msgStream[];
+};
+
+layout ( scalar, push_constant ) uniform Push {
+	MsgStreamRead  msgStreamRead;
+	MsgStreamWrite msgStreamWrite;
+} push;
+
+void main() {
+	const uint globalGroupID = GLOBAL_GROUP_ID;
+	const uint globalInvocationID = GLOBAL_INVOCATION_ID;
+
+	if( globalInvocationID >= 64 ) {
+		return;
+	}
+
+	const uint msg = push.msgStreamRead.msgStream[globalInvocationID];
+	uint msgOut = 256;
+
+	switch( msg ) {
+		case 0:
+			msgOut = 128;
+			break;
+		case 1:
+			msgOut = globalInvocationID;
+			break;
+		case 2:
+			msgOut = msg * 10;
+			break;
+	}
+
+	push.msgStreamWrite.msgStream[globalInvocationID] = msgOut;
+}

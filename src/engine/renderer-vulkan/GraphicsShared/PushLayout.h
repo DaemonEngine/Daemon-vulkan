@@ -28,10 +28,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef PUSH_LAYOUT_H
+#define PUSH_LAYOUT_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include "NumberTypes.h"
 
-#endif // DISPATCH_RAW_DATA_H
+#ifdef __cplusplus
+	struct PushLayout {
+#else
+	layout ( scalar, push_constant ) uniform PushLayout {
+#endif
+		uint64 msgStreamRead;
+		uint64 msgStreamWrite;
+		uint64 vertexCache;
+		uint64 indexCache;
+#ifdef __cplusplus
+	};
+#else
+	} push;
+#endif
+
+#endif // PUSH_LAYOUT_H

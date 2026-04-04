@@ -28,10 +28,58 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef ARRAY_H
+#define ARRAY_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#include <initializer_list>
 
-#endif // DISPATCH_RAW_DATA_H
+#include "../Math/NumberTypes.h"
+
+#include "IteratorSeq.h"
+
+template<typename T, uint64 newSize>
+struct Array {
+	const uint64 size = newSize;
+    T memory[newSize];
+
+	constexpr Array() {
+	}
+
+	constexpr Array( std::initializer_list<T> args ) {
+		for ( uint64 i = 0; i < args.size(); i++ ) {
+			memory[i] = args.begin()[i];
+		}
+	}
+
+	constexpr uint64 Size() const {
+		return newSize;
+	}
+
+	constexpr T& operator[]( const uint64 index ) {
+		return memory[index];
+	}
+
+	constexpr IteratorSeq<T> begin() {
+		return IteratorSeq<T>{ &memory[0] };
+	}
+
+	constexpr IteratorSeq<T> end() {
+		return IteratorSeq<T>{ &memory[size] };
+	}
+
+	constexpr IteratorSeq<const T> begin() const {
+		return IteratorSeq<const T>{ &memory[0] };
+	}
+
+	constexpr IteratorSeq<const T> end() const {
+		return IteratorSeq<const T>{ &memory[size] };
+	}
+};
+
+// template<typename T>
+// Array( T args... ) -> Array<T, sizeof( args )>;
+
+template<typename T, typename... Args>
+Array( T, Args... args ) -> Array<T, sizeof...( args ) + 1>;
+
+#endif // ARRAY_H

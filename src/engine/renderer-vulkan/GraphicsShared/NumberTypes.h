@@ -28,10 +28,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef DISPATCH_RAW_DATA_H
-#define DISPATCH_RAW_DATA_H
+#ifndef NUMBER_TYPES_SHARED_H
+#define NUMBER_TYPES_SHARED_H
 
-void DispatchRawData( void* memory );
-void DispatchRawDataSync( void* memory, void** out, int& outSize );
+#ifdef __cplusplus
+	#include "../Math/NumberTypes.h"
+#endif
 
-#endif // DISPATCH_RAW_DATA_H
+#ifndef __cplusplus
+	#define int8    int8_t
+	#define int16   int16_t
+	#define int32   int32_t
+	#define int64   int64_t
+
+	#define uint8   uint8_t
+	#define uint16  uint16_t
+	#define uint32  uint32_t
+	#define uint64  uint64_t
+
+	#define byte    uint8_t
+	#define uint    uint32_t
+
+	#define float16 float16_t
+	#define float32 float32_t
+	#define float64 float64_t
+#endif // !__cplusplus
+
+#endif // NUMBER_TYPES_SHARED_H
