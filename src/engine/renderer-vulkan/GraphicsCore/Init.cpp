@@ -105,6 +105,6 @@ void InitGraphicsEngine() {
 
 	TestCmd();
 
-	Task t { &EngineDispatch };
-	taskList.AddTask( t );
+	Task engineDispatchStart { &EngineDispatch };
+	taskList.AddTask( engineDispatchStart );
 }
