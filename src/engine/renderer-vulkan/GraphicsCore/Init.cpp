@@ -103,6 +103,8 @@ void InitGraphicsEngine() {
 
 	initExecCmdFence.Wait();
 
-	Task engineDispatchStart { &EngineDispatch };
-	taskList.AddTask( engineDispatchStart );
+	Task engineDispatchInit { &EngineDispatchInit };
+	Task engineDispatch     { &EngineDispatch };
+
+	taskList.AddTasks( { engineDispatch, engineDispatchInit } );
 }
