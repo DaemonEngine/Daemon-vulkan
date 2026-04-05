@@ -45,7 +45,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "GraphicsCore/GraphicsCoreStore.h"
 
 #include "engine/framework/System.h"
-#include "Thread/SyncTask.h"
 
 #include "GraphicsCore/GraphicsCoreCVars.h"
 
@@ -145,8 +144,7 @@ namespace TempAPI {
 
 	bool TestTask() {
 		Task task{ &TestPrint };
-		SyncTask( &task );
-		SyncTask( { &TestPrint } );
+		task.Wait();
 
 		Task task1{ &TestPrint };
 		Task task2{ &TestPrint2 };
