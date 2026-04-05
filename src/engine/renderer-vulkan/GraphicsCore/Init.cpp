@@ -89,19 +89,18 @@ void InitGraphicsEngine() {
 
 	InitCmdPools();
 
-	FenceMain initExecCmdFence;
-	Task      initExecCmdTask { &InitExecCmdPools, initExecCmdFence };
+	Task      initExecCmdTask { &InitExecCmdPools };
 
-	FenceMain initFence;
-	Task      initCmdTask     { &InitCmdPools,     initFence };
+	Task      initCmdTask     { &InitCmdPools };
 
 	taskList.AddTasks( { initExecCmdTask.ThreadMaskAllOthers() }, { initCmdTask.ThreadMaskAllOthers() } );
+
+	initExecCmdTask.Wait();
+	initCmdTask.Wait();
 
 	InitExecCmdPools();
 
 	resourceSystem.Init( 0 );
-
-	initExecCmdFence.Wait();
 
 	Task engineDispatchInit { &EngineDispatchInit };
 	Task engineDispatch     { &EngineDispatch };

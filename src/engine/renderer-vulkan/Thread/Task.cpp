@@ -32,6 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ThreadMemory.h"
 
+#include "TaskList.h"
+
 #include "Task.h"
 
 Task::Task() :
@@ -69,6 +71,10 @@ Task& Task::ThreadMaskAllOthers() {
 
 Task& Task::ThreadMaskCurrent() {
 	return ThreadMask( SetBit( 0ull, TLM.id ) );
+}
+
+void Task::Wait() {
+	taskList.TaskWait( *this );
 }
 
 void Task::operator=( const Task& other ) {
