@@ -79,7 +79,7 @@ StringView Parse( StringView& data, std::string* outStr, const char* allowedSymb
 
 	uint32 newLines = 0;
 
-	if ( !text ) {
+	if ( !data.size || !text ) {
 		return {};
 	}
 
