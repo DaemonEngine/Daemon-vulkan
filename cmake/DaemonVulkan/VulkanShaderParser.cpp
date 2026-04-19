@@ -542,7 +542,7 @@ struct BufferPushIDs {
 struct std::unordered_map<uint32_t, BufferPushIDs>  bufferPushIDs;
 static uint32_t                                     currentSPIRVID = 0;
 
-static std::unordered_set<std::string>              bufferPointers;
+static std::unordered_map<std::string, uint32_t>    bufferPointers;
 static std::unordered_map<std::string, std::string> bufferPointerTypes;
 static std::string                                  extensions;
 
@@ -584,7 +584,7 @@ std::string ParsePushConst( StringView& v, uint32_t* pushConstSize ) {
 				static const std::string bufPointer = "layout ( scalar, buffer_reference, buffer_reference_align = 4 ) ";
 
 				bufferPointerTypes[pointerType] =
-						bufPointer
+					  bufPointer
 					+ ( constPointer ? "restrict readonly buffer " : "restrict buffer " )
 					+ pointerType + " {\n\t"
 					+ type
@@ -596,16 +596,28 @@ std::string ParsePushConst( StringView& v, uint32_t* pushConstSize ) {
 
 		std::string name { o.memory, o.size };
 
-		if ( pointer ) {
-			bufferPointers.insert( name );
-		}
-
-		o = Parse( v, &outStr ); // ;
-
+		o    = Parse( v, &outStr );
 		out += outStr;
 
+		uint32_t arraySize = 1;
+
+		if ( o == "[" ) {
+			o    = Parse( v, &outStr );
+			out += outStr;
+
+			arraySize = strtod( outStr.c_str(), nullptr );
+
+			o    = Parse( v, &outStr ); // ]
+			out += outStr;
+
+			o    = Parse( v, &outStr ); // ;
+			out += outStr;
+		}
+
 		if ( pointer ) {
-			*pushConstSize += 8;
+			bufferPointers[name] = arraySize;
+
+			*pushConstSize += 8 * arraySize;
 
 			if ( buffers.find( name ) != buffers.end() ) {
 				BufferPushIDs& pushIDs = bufferPushIDs[currentSPIRVID];
@@ -614,10 +626,10 @@ std::string ParsePushConst( StringView& v, uint32_t* pushConstSize ) {
 				pushIDs.count++;
 			}
 		} else if ( type == "uint" || type == "uint32" || type == "float" ) {
-			*pushConstSize += 4;
+			*pushConstSize += 4 * arraySize;
 		} else {
 			// Assumed BDA
-			*pushConstSize += 8;
+			*pushConstSize += 8 * arraySize;
 		}
 	}
 
@@ -836,7 +848,7 @@ std::string ProcessInserts( const std::string& shaderText, Stage* stage, uint32_
 				continue;
 			}
 
-			out += "\n\nlayout ( scalar, push_constant ) uniform Push {";
+			out += "\n\nlayout ( scalar, push_constant ) uniform Push {\n";
 
 			out += ParsePushConst( v, pushConstSize );
 
@@ -890,7 +902,20 @@ std::string ProcessInserts( const std::string& shaderText, Stage* stage, uint32_
 			std::string bufferName { bufView.memory, bufView.size };
 
 			if ( bufferPointers.contains( bufferName ) ) {
-				out += " push." + bufferName + ".memory";
+				const uint32_t arraySize = bufferPointers[bufferName];
+				std::string arrayIndex;
+
+				if ( arraySize > 1 ) {
+					o           = Parse( v, &outStr ); // [
+					arrayIndex += outStr;
+
+					do {
+						o           = Parse( v, &outStr );
+						arrayIndex += outStr;
+					} while ( o != "]" );
+				}
+
+				out += " push." + bufferName + arrayIndex + ".memory";
 
 				continue;
 			}
@@ -1045,15 +1070,6 @@ int main( int argc, char** argv ) {
 		"#include \"../Vulkan.h\"\n\n"
 		"#include \"SPIRVBin.h\"\n\n"
 		"#include \"../../GraphicsShared/SPIRVIDs.h\"\n\n"
-		"enum BufferType {\n"
-		"\tBUFFER_VERTEX,\n"
-		"\tBUFFER_INDEX,\n"
-		"\tBUFFER_INDIRECT,\n"
-		"\tBUFFER_DESCRIPTOR_HEAP_IMAGES,\n"
-		"\tBUFFER_DESCRIPTOR_HEAP_SAMPLERS,\n"
-		"\tBUFFER_AS,\n"
-		"\tBUFFER_SBT\n"
-		"};\n\n"
 		"enum SPIRVType {\n"
 		"\tSPIRV_COMPUTE,\n"
 		"\tSPIRV_VERTEX,\n"
@@ -1064,7 +1080,7 @@ int main( int argc, char** argv ) {
 		"\tconst SPIRVType type;\n"
 		"\tconst uint32    size;\n"
 		"\tconst uint32    pushConstSize;\n"
-		"\tconst uint16    workgroupSize[3];"
+		"\tconst uint16    workgroupSize[3];\n"
 		"};\n\n"
 		"constexpr uint32 spirvCount = %u;\n\n"
 		"const SPIRVModule SPIRVBin[] = {\n",
