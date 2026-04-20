@@ -45,6 +45,6 @@ struct Version {
 
 std::strong_ordering operator<=>( const Version& lhs, const Version& rhs );
 
-constexpr Version DAEMON_VULKAN_VERSION { 0, 17, 4 };
+constexpr Version DAEMON_VULKAN_VERSION { 0, 17, 5 };
 
 #endif // VERSION_H
