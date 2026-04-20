@@ -101,7 +101,7 @@ struct Task {
 	}
 
 	template<typename FuncType, typename DataType>
-	Task( FuncType func, DataType&& newData ) :
+	Task( FuncType func, const DataType& newData ) :
 		Execute( ( TaskFunction ) func ),
 		dataIsPointer( IsPointer<DataType> ) {
 
@@ -109,9 +109,9 @@ struct Task {
 			data     = ( void* ) newData;
 			dataSize = sizeof( void* );
 		} else {
-			dataSize = sizeof( newData );
-			data     = AllocTaskData( dataSize );
-			memcpy( data, &newData, dataSize );
+			dataSize                = sizeof( newData );
+			data                    = AllocTaskData( dataSize );
+			*( ( DataType* ) data ) = newData;
 		}
 	}
 
