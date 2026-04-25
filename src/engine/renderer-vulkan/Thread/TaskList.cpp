@@ -88,7 +88,8 @@ void TaskList::AdjustThreadCount( uint32 newMaxThreads ) {
 	}
 
 	if ( !TLM.main ) {
-		threadUplink.AddCommand( ThreadUplink::CMD_SYNC_THREAD_COUNT );
+		taskList.AddTask( Task { &SyncThreadCount }.ThreadMaskAllOthers() );
+		SyncThreadCount();
 	}
 
 	Log::NoticeTag( "Changed thread count to %u", TLM.currentMaxThreads );
@@ -214,11 +215,8 @@ void TaskList::ResolveDependencies( Task& task, TaskInitList<T>& dependencies ) 
 		}
 
 		uint32 id = dependency.forwardTaskCounter.fetch_add( 1, std::memory_order_relaxed );
-
 		ASSERT_LE( id, Task::MAX_FORWARD_TASKS );
-
 		dependency.forwardTasks[id] = task.bufferID;
-
 		task.dependencyCounter.fetch_add( 1, std::memory_order_relaxed );
 
 		dependency.forwardTaskLock.Unlock();
@@ -273,17 +271,17 @@ void TaskList::AddToThreadQueueExt( Task& task ) {
 
 	taskCount.fetch_add( 1, std::memory_order_relaxed );
 
-	const uint32 projectedTime = taskTime.time / std::max( taskTime.count, 1ull ) / 1000;
+	const uint64 projectedTime = taskTime.time / std::max( taskTime.count, 1ull );
 
 	if ( projectedTime < TLM.addToQueueTimer.Time() / TLM.addToQueueCount && !TLM.main ) {
 		threadQueues[TLM.id].AddTask( TLM.id, task.bufferID );
 		return;
 	}
 
-	uint32 node = currentThreadExecutionNode.load( std::memory_order_relaxed );
-	if ( node != UINT32_MAX ) {
-		uint32 expected = node;
-		currentThreadExecutionNode.compare_exchange_strong( expected, UINT32_MAX, std::memory_order_relaxed );
+	uint64 node = currentThreadExecutionNode.load( std::memory_order_relaxed );
+	if ( node != UINT64_MAX ) {
+		uint64 expected = node;
+		currentThreadExecutionNode.compare_exchange_strong( expected, UINT64_MAX, std::memory_order_relaxed );
 
 		TLM.idleThreads[node]++;
 		threadQueues[node].AddTask( node, task.bufferID );
@@ -299,10 +297,10 @@ void TaskList::AddToThreadQueueExt( Task& task ) {
 	for ( node = 0; node < TLM.currentMaxThreads; node++ ) {
 		const uint64 scaledProjectedTime = projectedTime / threads[node].maxCoreFrequencyScale;
 
-		uint32 baseThreadTime = threadExecutionNodes[node].fetch_add( scaledProjectedTime, std::memory_order_relaxed );
-		uint32 nextNodeTime   = node == TLM.currentMaxThreads - 1 ?
-		                                UINT32_MAX
-		                              : threadExecutionNodes[node + 1].load( std::memory_order_relaxed );
+		uint64       baseThreadTime      = threadExecutionNodes[node].fetch_add( scaledProjectedTime, std::memory_order_relaxed );
+		uint64       nextNodeTime        = node == TLM.currentMaxThreads - 1 ?
+		                                           UINT64_MAX
+		                                         : threadExecutionNodes[node + 1].load( std::memory_order_relaxed );
 
 		if ( node == TLM.currentMaxThreads - 1
 			|| baseThreadTime + scaledProjectedTime <= nextNodeTime ) {
