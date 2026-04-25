@@ -98,6 +98,7 @@ uint64 operator""_h(  const uint64Ext time ) {
 
 Timer::Timer( uint64* newTimeVar ) :
 	timeVar( newTimeVar ) {
+	Start();
 }
 
 // If newTimeVar is specified, it will be set to the Timer's runTime when the destructor is called
@@ -110,7 +111,7 @@ Timer::Timer( const bool start, uint64* newTimeVar ) :
 
 Timer::~Timer() {
 	if ( timeVar ) {
-		*timeVar = Time();
+		*timeVar += Time();
 	}
 }
 
