@@ -346,13 +346,9 @@ Task* TaskList::GetTaskMemory( Task& task ) {
 	}
 
 	Task* taskMemory     = tasks.GetNextElementMemory();
-	taskMemory->data     = task.data;
-	taskMemory->dataSize = task.dataSize;
 
-	taskMemory->active   = true;
 	task.active          = true;
 	task.gen             = taskMemory->gen + 1;
-
 	task.bufferID        = taskMemory - tasks.memory;
 
 	*taskMemory          = task;
@@ -362,7 +358,11 @@ Task* TaskList::GetTaskMemory( Task& task ) {
 
 template<IsTask T>
 void TaskList::AddTask( Task& task, TaskInitList<T>&& dependencies ) {
-	if ( exiting.load( std::memory_order_relaxed ) && !task.shutdownTask ) {
+	if ( exiting.load( std::memory_order_relaxed ) && !task.IsShutdownTask() ) {
+		return;
+	}
+
+	if ( !task.IsValid() ) {
 		return;
 	}
 

@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Task::Task() :
 	id( SetBit( 0u, 15 ) ) {
+	SetValid( true );
 }
 
 Task::Task( const Task& other ) {
@@ -45,7 +46,7 @@ Task::Task( const Task& other ) {
 }
 
 Task& Task::Delay( const uint64 delay ) {
-	if ( shutdownTask ) {
+	if ( IsShutdownTask() ) {
 		Log::Warn( "Shutdown tasks may not be delayed! (task: %s, delay: %u)", Execute, delay );
 	} else {
 		time = TimeNs() + delay;
@@ -57,6 +58,10 @@ Task& Task::Delay( const uint64 delay ) {
 Task& Task::ThreadMask( const uint64 newThreadMask ) {
 	threadMask = newThreadMask;
 	threadCount.store( CountBits( threadMask ), std::memory_order_relaxed );
+
+	if ( !threadMask ) {
+		SetValid( false );
+	}
 
 	return *this;
 }
@@ -74,7 +79,21 @@ Task& Task::ThreadMaskCurrent() {
 }
 
 void Task::Wait() {
-	taskList.TaskWait( *this );
+	if ( IsValid() ) {
+		taskList.TaskWait( *this );
+	}
+}
+
+bool Task::IsValid() {
+	return BitSet( flags, validOffset );
+}
+
+bool Task::IsShutdownTask() {
+	return BitSet( flags, shutdownOffset );
+}
+
+void Task::SetValid( const bool valid ) {
+	valid ? SetBit( &flags, validOffset ) : UnSetBit( &flags, validOffset );
 }
 
 void Task::operator=( const Task& other ) {
@@ -83,8 +102,9 @@ void Task::operator=( const Task& other ) {
 
 	complete           = other.complete;
 
+	flags              = other.flags;
+
 	active             = other.active;
-	shutdownTask       = other.shutdownTask;
 
 	eventMask          = other.eventMask;
 

@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "TaskData.h"
 
-template<typename T>
+/* template<typename T>
 struct IsPointer_ {
 	static constexpr bool out = false;
 };
@@ -55,7 +55,7 @@ struct IsPointer_<T*> {
 };
 
 template<typename T>
-constexpr bool IsPointer = IsPointer_<T>::out;
+constexpr bool IsPointer = IsPointer_<T>::out; */
 
 struct Task {
 	using TaskFunction = void( * )( void* );
@@ -64,9 +64,9 @@ struct Task {
 	void*               data;
 
 	FenceMain           complete;
+	uint8               flags;
 
 	bool                active                 = false;
-	bool                shutdownTask           = false;
 
 	uint32              eventMask              = 0;
 
@@ -78,7 +78,6 @@ struct Task {
 	uint32              forwardTaskCounterFast = 0;
 
 	uint8               id                     = 0; // 4 bits - task memory/dependency tracking in TaskList
-	const bool          dataIsPointer          = false;
 
 	static constexpr uint32 UNALLOCATED        = UINT16_MAX;
 	uint16              bufferID               = UNALLOCATED; // Task RingBuffer id
@@ -98,21 +97,18 @@ struct Task {
 	template<typename FuncType>
 	Task( FuncType func ) :
 		Execute( ( TaskFunction ) func ) {
+		SetValid( true );
 	}
 
 	template<typename FuncType, typename DataType>
 	Task( FuncType func, const DataType& newData ) :
-		Execute( ( TaskFunction ) func ),
-		dataIsPointer( IsPointer<DataType> ) {
+		Execute( ( TaskFunction ) func ) {
 
-		if constexpr ( IsPointer<DataType> ) {
-			data     = ( void* ) newData;
-			dataSize = sizeof( void* );
-		} else {
-			dataSize                = sizeof( newData );
-			data                    = AllocTaskData( dataSize );
-			*( ( DataType* ) data ) = newData;
-		}
+		SetValid( true );
+
+		dataSize                = sizeof( newData );
+		data                    = AllocTaskData( dataSize );
+		*( ( DataType* ) data ) = newData;
 	}
 
 	void operator=( const Task& other );
@@ -128,6 +124,9 @@ struct Task {
 
 	void  Wait();
 
+	bool  IsValid();
+	bool  IsShutdownTask();
+
 	const Task& operator*() {
 		return *this;
 	}
@@ -139,6 +138,12 @@ struct Task {
 	constexpr Task& GetTask() {
 		return *this;
 	}
+
+	private:
+	static constexpr uint32 validOffset    = 0;
+	static constexpr uint32 shutdownOffset = 1;
+
+	void  SetValid( const bool valid );
 };
 
 struct TaskProxy {
