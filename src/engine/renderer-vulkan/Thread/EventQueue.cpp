@@ -34,7 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "EventQueue.h"
 
-EventRing::EventResult EventRing::AddTask( Task& task, const uint32 ringID ) {
+EventRing::EventResult EventRing::AddTask( Task& task ) {
 	uint64 targetTime = task.time;
 	uint32 sector     = ( targetTime - currentTime ) / granularity;
 
@@ -50,8 +50,6 @@ EventRing::EventResult EventRing::AddTask( Task& task, const uint32 ringID ) {
 	if ( eventID == 64 ) {
 		return EVENT_FAIL;
 	}
-
-	SetBit( &task.eventMask, ringID );
 
 	SetBit( &allocatedEvents[sector], eventID );
 	events[sector][eventID] = task;
@@ -87,17 +85,14 @@ void EventQueue::AddTask( Task& task ) {
 
 	if ( delay ) {
 		for ( EventRing& eventRing : eventRings ) {
-			if ( !BitSet( task.eventMask, &eventRing - eventRings.memory )
-				&& delay <= eventRing.granularity * EventRing::sectors ) {
+			if ( delay <= eventRing.granularity * EventRing::sectors ) {
 				while ( !eventRing.lock.LockWrite() );
 
-				res    = eventRing.AddTask( task, &eventRing - eventRings.memory );
+				res = eventRing.AddTask( task );
 
 				eventRing.lock.UnlockWrite();
 
-				if ( res != EventRing::EVENT_EXPIRED ) {
-					break;
-				}
+				break;
 			}
 		}
 	} else {
