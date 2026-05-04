@@ -114,7 +114,8 @@ class TaskList :
 	bool  IsTrackedDependency( const uint16 id );
 	bool  IsUpdatedDependency( const uint16 id );
 
-	byte* AllocTaskData( const uint16 dataSize );
+	byte* AllocTaskData( const uint16 dataSize, uint16* offset );
+	byte* GetTaskData( const uint16 offset );
 
 	void  AddTask( Task& task, std::initializer_list<TaskProxy> dependencies = {} );
 	void  AddTasksExt( std::initializer_list<TaskInit> dependencies );
@@ -132,13 +133,13 @@ class TaskList :
 	void  AdjustThreadCount( const uint32 newMaxThreads );
 
 	private:
-	AccessLock          threadCountLock;
-
-	std::atomic<uint64> threadExecutionNodes[MAX_THREADS];
-
 	struct ThreadExecutionNode {
 		uint8 nextThreadExecutionNode;
 	};
+
+	AccessLock                   threadCountLock;
+
+	std::atomic<uint64>          threadExecutionNodes[MAX_THREADS];
 
 	AtomicRingBuffer<Task>       tasks     { "GlobalTaskMemory",     &sysAllocator };
 	AtomicRingBuffer<byte, true> tasksData { "GlobalTaskDataMemory", &sysAllocator };

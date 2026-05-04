@@ -160,13 +160,20 @@ bool TaskList::IsUpdatedDependency( const uint16 id ) {
 	return BitSet( id, TASK_SHIFT_UPDATED_DEPENDENCY );
 }
 
-byte* TaskList::AllocTaskData( const uint16 dataSize ) {
-	return tasksData.GetNextElementMemory( dataSize );
+byte* TaskList::AllocTaskData( const uint16 dataSize, uint16* offset ) {
+	byte* out = tasksData.GetNextElementMemory( dataSize );
+	*offset   = ( out - tasksData.memory ) >> 3;
+
+	return out;
+}
+
+byte* TaskList::GetTaskData( const uint16 offset ) {
+	return tasksData.memory + ( offset << 3 );
 }
 
 void TaskList::FinishTask( Task* task ) {
-	if ( task->dataSize ) {
-		tasksData.UpdateCurrentElement( ( byte* ) task->data - tasksData.memory );
+	if ( task->dataOffset != UINT16_MAX ) {
+		tasksData.UpdateCurrentElement( task->dataOffset );
 	}
 }
 
@@ -215,7 +222,7 @@ void TaskList::ResolveDependencies( Task& task, TaskInitList<T>& dependencies ) 
 		}
 
 		uint32 id = dependency.forwardTaskCounter.fetch_add( 1, std::memory_order_relaxed );
-		ASSERT_LE( id, Task::MAX_FORWARD_TASKS );
+		ASSERT_LE( id, Task::maxForwardTasks );
 		dependency.forwardTasks[id] = task.bufferID;
 		task.dependencyCounter.fetch_add( 1, std::memory_order_relaxed );
 
@@ -347,7 +354,7 @@ Task* TaskList::GetTaskMemory( Task& task ) {
 
 	Task* taskMemory     = tasks.GetNextElementMemory();
 
-	task.active          = true;
+	task.SetActive( true );
 	task.gen             = taskMemory->gen + 1;
 	task.bufferID        = taskMemory - tasks.memory;
 
