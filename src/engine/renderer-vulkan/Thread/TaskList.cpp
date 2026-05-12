@@ -140,40 +140,49 @@ void TaskList::FinishShutdown() {
 	Log::NoticeTag( debugOut );
 }
 
-bool TaskList::AddedToTaskList( const uint16 id ) {
+bool  TaskList::AddedToTaskList( const uint8 id ) {
 	return BitSet( id, TASK_SHIFT_ADDED );
 }
 
-bool TaskList::AddedToTaskMemory( const uint16 bufferID ) {
+bool  TaskList::AddedToTaskMemory( const uint16 bufferID ) {
 	return bufferID != Task::UNALLOCATED;
 }
 
-bool TaskList::HasUntrackedDeps( const uint16 id ) {
+bool  TaskList::HasUntrackedDeps( const uint8 id ) {
 	return BitSet( id, TASK_SHIFT_HAS_UNTRACKED_DEPS );
 }
 
-bool TaskList::IsTrackedDependency( const uint16 id ) {
+bool  TaskList::IsTrackedDependency( const uint8 id ) {
 	return BitSet( id, TASK_SHIFT_TRACKED_DEPENDENCY );
 }
 
-bool TaskList::IsUpdatedDependency( const uint16 id ) {
+bool  TaskList::IsUpdatedDependency( const uint8 id ) {
 	return BitSet( id, TASK_SHIFT_UPDATED_DEPENDENCY );
 }
 
-byte* TaskList::AllocTaskData( const uint16 dataSize, uint16* offset ) {
-	byte* out = tasksData.GetNextElementMemory( dataSize );
-	*offset   = ( out - tasksData.memory ) >> 3;
+uint8 TaskList::GetForwardCounterFast( const uint8 id ) {
+	return GetBits( id, TASK_SHIFT_FORWARD_COUNTER, 4 );
+}
+
+void  TaskList::IncrementForwardCounterFast( uint8* id ) {
+	SetBits( id, GetForwardCounterFast( *id ) + 1, TASK_SHIFT_FORWARD_COUNTER, 4 );
+}
+
+byte* TaskList::AllocTaskData( const uint16 dataSize, uint64* offset ) {
+	*offset   = tasksData.GetNextElement( dataSize );
+	byte* out = tasksData.memory + ( *offset & tasksData.mask );
+	*offset >>= cacheLineBits;
 
 	return out;
 }
 
-byte* TaskList::GetTaskData( const uint16 offset ) {
-	return tasksData.memory + ( offset << 3 );
+byte* TaskList::GetTaskData( const uint64 offset ) {
+	return tasksData.memory + ( ( offset << cacheLineBits ) & tasksData.mask );
 }
 
 void TaskList::FinishTask( Task* task ) {
-	if ( task->dataOffset != UINT16_MAX ) {
-		tasksData.UpdateCurrentElement( task->dataOffset );
+	if ( task->GetArgCount() ) {
+		tasksData.UpdateCurrentElement( task->GetDataOffset() );
 	}
 }
 
@@ -407,8 +416,8 @@ void TaskList::MarkDependencies( Task& task, TaskInitList<T>&& dependencies ) {
 		if ( !AddedToTaskList( ( *dep )->id ) ) {
 			Task* taskMemory = GetTaskMemory( ( *dep ).GetTask() );
 
-			taskMemory->forwardTasks[taskMemory->forwardTaskCounterFast] = mainTask->bufferID;
-			taskMemory->forwardTaskCounterFast++;
+			taskMemory->forwardTasks[GetForwardCounterFast( taskMemory->id )] = mainTask->bufferID;
+			IncrementForwardCounterFast( &taskMemory->id );
 
 			SetBit( &( *dep )->id, TASK_SHIFT_TRACKED_DEPENDENCY );
 
@@ -460,8 +469,8 @@ void TaskList::AddTasksExt( std::initializer_list<TaskInit> dependencies ) {
 	for ( const TaskInit& taskInit : dependencies ) {
 		for ( const TaskProxy* task = &taskInit.begin()[1]; task < taskInit.end(); task++ ) {
 			if ( IsTrackedDependency( task->task.id ) && !IsUpdatedDependency( task->task.id ) ) {
-				Task* taskMemory               = GetTaskMemory( task->task );
-				taskMemory->forwardTaskCounter = taskMemory->forwardTaskCounterFast;
+				Task* taskMemory = GetTaskMemory( task->task );
+				taskMemory->forwardTaskCounter.store( GetForwardCounterFast( taskMemory->id ), std::memory_order_relaxed);
 
 				SetBit( &task->task.id, TASK_SHIFT_UPDATED_DEPENDENCY );
 			}

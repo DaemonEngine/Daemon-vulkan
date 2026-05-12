@@ -32,6 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "TaskData.h"
 
-byte* AllocTaskData( const uint16 dataSize, uint16* offset ) {
+byte* AllocTaskData( const uint16 dataSize, uint64* offset ) {
 	return taskList.AllocTaskData( dataSize, offset );
 }

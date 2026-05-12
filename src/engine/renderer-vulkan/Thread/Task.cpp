@@ -102,7 +102,7 @@ void Task::ExecuteDestructors() {
 	uint32 offset      = 0;
 
 	while ( destructors ) {
-		DestructorFunction destructor = *( DestructorFunction* ) ( taskList.GetTaskData( dataOffset ) + offset );
+		DestructorFunction destructor = *( DestructorFunction* ) ( taskList.GetTaskData( GetDataOffset() ) + offset );
 
 		uint32             arg        = FindLSB( destructors );
 		destructor( GetArgMemory( arg ) );
@@ -169,17 +169,27 @@ uint32 Task::RemapArg( const uint32 arg ) {
 	return GetBits( argsMap, arg * argMapArgSize + argMapArgOffset, argMapArgSize );
 }
 
+uint64 Task::GetDataOffset() {
+	return SetBits( ( uint64 ) dataOffset, ( uint64 ) dataOffset2, 32, 8 );
+}
+
 byte* Task::InitMemory( Arg* start, Arg* end ) {
 	SetValid( true );
 
 	SortArgs( start, end );
 	uint32 dataSize = SetArgsMap( start, end );
 
-	return AllocTaskData( dataSize, &dataOffset );
+	uint64 offset;
+	byte* data  = AllocTaskData( dataSize, &offset );
+
+	dataOffset  = GetBits( offset, 0, 32 );
+	dataOffset2 = GetBits( offset, 32, 8 );
+
+	return data;
 }
 
 byte* Task::GetArgMemory( const uint32 arg ) {
-	return taskList.GetTaskData( dataOffset ) + dataOffsets[RemapArg( arg )];
+	return taskList.GetTaskData( GetDataOffset() ) + dataOffsets[RemapArg( arg )];
 }
 
 void Task::operator=( const Task& other ) {
@@ -187,6 +197,7 @@ void Task::operator=( const Task& other ) {
 	complete           = other.complete;
 
 	dataOffset         = other.dataOffset;
+	dataOffset2        = other.dataOffset2;
 
 	flags              = other.flags;
 	id                 = other.id;

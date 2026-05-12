@@ -112,18 +112,19 @@ using TaskFunction8 = void( * )( void*, void*, void*, void*, void*, void*, void*
 
 #define argsMsg "Tasks must have the same amount of args as the underlying function;" \
 	" each function arg must be a pointer to the corresponding task arg type"
-//char[] = "ALongTaskNameToBeSureRight?";
+//char[] = "ALongTaskNameToBeSure?";
 
 struct Task {
 	TaskFunction       Execute;
 
 	uint16             dataOffsets[8]           { 0 };
-	uint16             dataOffset             = 0;
+	// 40 bits for task data so it supports up to ~207 days with 1024 tasks with 64 byte args per frame on average @ 60 FPS
+	uint32             dataOffset             = 0;
+	uint8              dataOffset2            = 0;
 
 	uint8              flags                  = 0;
-	uint8              id                     = 0; // 4 bits - task memory/dependency tracking in TaskList
 
-	static constexpr uint32 UNALLOCATED       = UINT16_MAX;
+	static constexpr uint16 UNALLOCATED       = UINT16_MAX;
 	uint16             bufferID               = UNALLOCATED; // Task RingBuffer id
 	uint32             gen                    = 0;
 
@@ -133,20 +134,23 @@ struct Task {
 	uint64             threadMask             = 0;
 
 	AccessLock         forwardTaskLock;
+	uint8              id                     = 0; // task memory/dependency tracking in TaskList
 	std::atomic<uint8> dependencyCounter      = 1;
 	std::atomic<uint8> forwardTaskCounter     = 0;
-	uint8              forwardTaskCounterFast = 0;
 
 	FenceBool          complete;
 	std::atomic<uint8> threadCount            = 0;
 
 	uint16             srcLine                = 0;
 
-	static constexpr uint32 maxForwardTasks   = 10;
-	alignas( uint32 ) uint16 forwardTasks[maxForwardTasks]        { 0 };
+	static constexpr uint32 maxForwardTasks   = 8;
+	uint16 forwardTasks[maxForwardTasks]        { 0 };
 
-	char src[28];
-	char name[32];
+	static constexpr uint32 maxSrcSize = 24;
+	static constexpr uint32 maxNameSize = 24;
+
+	char               src[maxSrcSize];
+	char               name[maxNameSize];
 
 	                Task();
 	                Task( const Task& other );
@@ -161,7 +165,6 @@ struct Task {
 	Task( FuncType func ) :
 		Execute( ( TaskFunction ) func ) {
 		SetValid( true );
-		dataOffset = UINT16_MAX;
 	}
 
 	template<typename FuncType, typename DataType>
@@ -277,6 +280,8 @@ struct Task {
 	bool   IsShutdownTask();
 	bool   IsActive();
 	uint8  GetArgCount();
+
+	uint64 GetDataOffset();
 
 	void   SetActive( const bool active );
 
