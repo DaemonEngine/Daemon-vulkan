@@ -299,7 +299,6 @@ struct Task {
 	static constexpr uint32 argMapMask      = 255;
 	static constexpr uint32 argMapArgSize   = 3;
 
-	void   SortArgs(   Arg* start, Arg* end );
 	uint32 SetArgsMap( Arg* start, Arg* end );
 	uint32 RemapArg( const uint32 arg );
 

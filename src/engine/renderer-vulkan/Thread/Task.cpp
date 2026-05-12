@@ -136,14 +136,6 @@ void Task::SetActive( const bool active ) {
 	active ? SetBit( &flags, activeOffset ) : UnSetBit( &flags, activeOffset );
 }
 
-void Task::SortArgs( Arg* start, Arg* end ) {
-	std::sort( start, end,
-		[]( const Arg& lhs, const Arg& rhs ) {
-			return lhs.size > rhs.size;
-		}
-	);
-}
-
 uint32 Task::SetArgsMap( Arg* start, Arg* end ) {
 	uint32 size = 0;
 
@@ -176,7 +168,12 @@ uint64 Task::GetDataOffset() {
 byte* Task::InitMemory( Arg* start, Arg* end ) {
 	SetValid( true );
 
-	SortArgs( start, end );
+	std::sort( start, end,
+		[]( const Arg& lhs, const Arg& rhs ) {
+			return lhs.size > rhs.size;
+		}
+	);
+
 	uint32 dataSize = SetArgsMap( start, end );
 
 	uint64 offset;
