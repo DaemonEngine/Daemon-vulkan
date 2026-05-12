@@ -463,14 +463,15 @@ void TaskList::AddTasksExt( std::initializer_list<TaskInit> dependencies ) {
 
 	/* Tracked dependencies are those that we allocated in the AtomicRingBuffer during this function call.
 	This allows us to skip a bunch of atomics, but we have to update the forwardTaskCounters
-	*before* we add any of the tasks to the task ring.
+	*before* we add any of the tasks to the task queues.
 	Otherwise we could end up updating it after other threads have already finished all of the dependencies.
 	Flattening the DAG would get rid of the need to do this because we'd just add tasks starting from the end of the graph */
+
 	for ( const TaskInit& taskInit : dependencies ) {
 		for ( const TaskProxy* task = &taskInit.begin()[1]; task < taskInit.end(); task++ ) {
 			if ( IsTrackedDependency( task->task.id ) && !IsUpdatedDependency( task->task.id ) ) {
 				Task* taskMemory = GetTaskMemory( task->task );
-				taskMemory->forwardTaskCounter.store( GetForwardCounterFast( taskMemory->id ), std::memory_order_relaxed);
+				taskMemory->forwardTaskCounter.store( GetForwardCounterFast( taskMemory->id ), std::memory_order_relaxed );
 
 				SetBit( &task->task.id, TASK_SHIFT_UPDATED_DEPENDENCY );
 			}
@@ -497,9 +498,10 @@ Task* TaskList::FetchTask( Thread* thread, const bool longestTask ) {
 
 	Q_UNUSED( longestTask );
 
-	ThreadQueue& threadQueue   = threadQueues[TLM.id];
-	uint8  current             = threadQueue.current;
-	uint16 id                  = threadQueue.tasks[current];
+	ThreadQueue& threadQueue = threadQueues[TLM.id];
+	uint8        current     = threadQueue.current;
+	uint16       id          = threadQueue.tasks[current];
+
 	if ( id == ThreadQueue::TASK_NONE ) {
 		currentThreadExecutionNode.store( TLM.id, std::memory_order_relaxed );
 		return nullptr;
