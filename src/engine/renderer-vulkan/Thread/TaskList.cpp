@@ -412,8 +412,8 @@ void TaskList::AddTaskExt( Task& task, TaskInitList<T>&& dependencies ) {
 
 template<IsTask T>
 void TaskList::MarkDependencies( Task& task, TaskInitList<T>&& dependencies ) {
-	Task*  mainTask          = GetTaskMemory( task );
-	uint32 dependencyCounter = 0;
+	Task* mainTask          = GetTaskMemory( task );
+	uint8 dependencyCounter = 0;
 
 	if ( IsUpdatedDependency( mainTask->id ) ) {
 		return;
