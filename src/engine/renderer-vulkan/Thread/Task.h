@@ -112,9 +112,15 @@ using TaskFunction8 = void( * )( void*, void*, void*, void*, void*, void*, void*
 
 #define argsMsg "Tasks must have the same amount of args as the underlying function;" \
 	" each function arg must be a pointer to the corresponding task arg type"
+
+#define argSizeMsg "Task arg size must not exceed Task::maxArgSize"
 //char[] = "ALongTaskNameToBeSure?";
 
 struct Task {
+	static constexpr uint32 maxArgCount      = 4;
+	static constexpr uint32 maxArgSize       = 3072;
+	static constexpr uint32 maxTotalArgSize  = maxArgCount * maxArgSize;
+
 	TaskFunction       Execute;
 
 	uint16             dataOffsets[8]           { 0 };
@@ -172,6 +178,7 @@ struct Task {
 		Execute( ( TaskFunction ) func ) {
 
 		static_assert( std::is_same_v<FuncType, void( * )( DataType* )>, argsMsg );
+		static_assert( sizeof( DataType ) <= maxArgSize, argSizeMsg );
 
 		Arg args[] {
 			Arg {
@@ -189,6 +196,8 @@ struct Task {
 		Execute( ( TaskFunction ) func ) {
 
 		static_assert( std::is_same_v<FuncType, void( * )( DataType*, DataType2* )>, argsMsg );
+		static_assert( sizeof( DataType )  <= maxArgSize, argSizeMsg );
+		static_assert( sizeof( DataType2 ) <= maxArgSize, argSizeMsg );
 
 		Arg args[] {
 			Arg {
@@ -211,6 +220,9 @@ struct Task {
 		Execute( ( TaskFunction ) func ) {
 
 		static_assert( std::is_same_v<FuncType, void( * )( DataType*, DataType2*, DataType3* )>, argsMsg );
+		static_assert( sizeof( DataType )  <= maxArgSize, argSizeMsg );
+		static_assert( sizeof( DataType2 ) <= maxArgSize, argSizeMsg );
+		static_assert( sizeof( DataType3 ) <= maxArgSize, argSizeMsg );
 
 		Arg args[] {
 			Arg {
@@ -238,6 +250,10 @@ struct Task {
 		Execute( ( TaskFunction ) func ) {
 
 		static_assert( std::is_same_v<FuncType, void( * )( DataType*, DataType2*, DataType3*, DataType4* )>, argsMsg );
+		static_assert( sizeof( DataType )  <= maxArgSize, argSizeMsg );
+		static_assert( sizeof( DataType2 ) <= maxArgSize, argSizeMsg );
+		static_assert( sizeof( DataType3 ) <= maxArgSize, argSizeMsg );
+		static_assert( sizeof( DataType4 ) <= maxArgSize, argSizeMsg );
 
 		Arg args[] {
 			Arg {
