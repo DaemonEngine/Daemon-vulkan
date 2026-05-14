@@ -373,7 +373,7 @@ Task* TaskList::GetTaskMemory( Task& task ) {
 }
 
 template<IsTask T>
-void TaskList::AddTask( Task& task, TaskInitList<T>&& dependencies ) {
+void TaskList::AddTaskExt( Task& task, TaskInitList<T>&& dependencies ) {
 	if ( exiting.load( std::memory_order_relaxed ) && !task.IsShutdownTask() ) {
 		return;
 	}
@@ -382,12 +382,13 @@ void TaskList::AddTask( Task& task, TaskInitList<T>&& dependencies ) {
 		return;
 	}
 
+	if ( AddedToTaskList( task.id ) ) {
+		return;
+	}
+
 	TLM.addTimer.Start();
 
 	Task* taskMemory = GetTaskMemory( task );
-
-	SetBit( &task.id, TASK_SHIFT_ADDED );
-
 	taskMemory->id   = task.id;
 
 	if ( HasUntrackedDeps( task.id ) ) {
@@ -397,11 +398,13 @@ void TaskList::AddTask( Task& task, TaskInitList<T>&& dependencies ) {
 
 		if ( !counter ) {
 			AddToThreadQueue( *taskMemory );
+			SetBit( &task.id, TASK_SHIFT_ADDED );
 		} else {
 			taskWithDependenciesCount.fetch_add( 1, std::memory_order_relaxed );
 		}
-	} else if ( dependencies.start == dependencies.end ) {
+	} else if ( !taskMemory->dependencyCounter ) {
 		AddToThreadQueue( *taskMemory );
+		SetBit( &task.id, TASK_SHIFT_ADDED );
 	}
 
 	TLM.addTimer.Stop();
@@ -412,26 +415,33 @@ void TaskList::MarkDependencies( Task& task, TaskInitList<T>&& dependencies ) {
 	Task*  mainTask          = GetTaskMemory( task );
 	uint32 dependencyCounter = 0;
 
+	if ( IsUpdatedDependency( mainTask->id ) ) {
+		return;
+	}
+
 	for ( const T* dep = dependencies.start; dep < dependencies.end; dep++ ) {
-		if ( !AddedToTaskList( ( *dep )->id ) ) {
-			Task* taskMemory = GetTaskMemory( ( *dep ).GetTask() );
-
-			taskMemory->forwardTasks[GetForwardCounterFast( taskMemory->id )] = mainTask->bufferID;
-			IncrementForwardCounterFast( &taskMemory->id );
-
-			SetBit( &( *dep )->id, TASK_SHIFT_TRACKED_DEPENDENCY );
-
-			dependencyCounter++;
+		if ( AddedToTaskList( ( *dep )->id ) ) {
+			continue;
 		}
+
+		Task* taskMemory = GetTaskMemory( ( *dep ).GetTask() );
+
+		taskMemory->forwardTasks[GetForwardCounterFast( taskMemory->id )] = mainTask->bufferID;
+		IncrementForwardCounterFast( &taskMemory->id );
+		SetBit( &( *dep )->id, TASK_SHIFT_TRACKED_DEPENDENCY );
+
+		dependencyCounter++;
 	}
 
 	if ( dependencyCounter != ( dependencies.end - dependencies.start ) ) {
 		SetBit( &task.id, TASK_SHIFT_HAS_UNTRACKED_DEPS );
 
-		mainTask->dependencyCounter += dependencyCounter;
+		mainTask->dependencyCounter.fetch_add( dependencyCounter,     std::memory_order_relaxed );
 	} else {
-		mainTask->dependencyCounter += dependencyCounter - 1;
+		mainTask->dependencyCounter.fetch_add( dependencyCounter - 1, std::memory_order_relaxed );
 	}
+
+	SetBit( &task.id, TASK_SHIFT_UPDATED_DEPENDENCY );
 }
 
 template<IsTask T>
@@ -449,7 +459,11 @@ void TaskList::AddTask( Task& task, std::initializer_list<TaskProxy> dependencie
 	if ( time < task.time && task.time - time > eventQueue.minGranularity ) {
 		eventQueue.AddTask( task );
 	} else {
-		AddTask( task, TaskInitList { dependencies.begin(), dependencies.end() } );
+		AddTaskExt( task, TaskInitList { dependencies.begin(), dependencies.end() } );
+	}
+
+	for ( const TaskProxy& dep : dependencies ) {
+		AddTaskExt( dep.task, TaskInitList<Task> {} );
 	}
 
 	UnMarkDependencies( TaskInitList{ dependencies.begin(), dependencies.end() } );
@@ -469,23 +483,28 @@ void TaskList::AddTasksExt( std::initializer_list<TaskInit> dependencies ) {
 
 	for ( const TaskInit& taskInit : dependencies ) {
 		for ( const TaskProxy* task = &taskInit.begin()[1]; task < taskInit.end(); task++ ) {
-			if ( IsTrackedDependency( task->task.id ) && !IsUpdatedDependency( task->task.id ) ) {
+			if ( IsTrackedDependency( task->task.id ) ) {
 				Task* taskMemory = GetTaskMemory( task->task );
 				taskMemory->forwardTaskCounter.store( GetForwardCounterFast( taskMemory->id ), std::memory_order_relaxed );
-
-				SetBit( &task->task.id, TASK_SHIFT_UPDATED_DEPENDENCY );
 			}
 		}
 	}
 
 	for ( const TaskInit& taskInit : dependencies ) {
 		for ( const TaskProxy* task = &taskInit.begin()[1]; task < taskInit.end(); task++ ) {
-			if ( !AddedToTaskList( task->task.id ) ) {
-				AddTask( task->task );
+			if ( !IsUpdatedDependency( task->task.id ) && !AddedToTaskList( task->task.id ) ) {
+				GetTaskMemory( task->task )->dependencyCounter.store( 0, std::memory_order_relaxed );
+			}
+
+			uint64 time = TimeNs();
+			if ( time < task->task.time && task->task.time - time > eventQueue.minGranularity ) {
+				eventQueue.AddTask( task->task );
+			} else {
+				AddTaskExt( task->task, TaskInitList<Task> {} );
 			}
 		}
 
-		AddTask( taskInit.begin()[0].task, TaskInitList{ &taskInit.begin()[1], taskInit.end() } );
+		AddTaskExt( taskInit.begin()[0].task, TaskInitList{ &taskInit.begin()[1], taskInit.end() } );
 	}
 
 	for ( const TaskInit& taskInit : dependencies ) {
@@ -493,10 +512,8 @@ void TaskList::AddTasksExt( std::initializer_list<TaskInit> dependencies ) {
 	}
 }
 
-Task* TaskList::FetchTask( Thread* thread, const bool longestTask ) {
+Task* TaskList::FetchTask( Thread* thread ) {
 	Log::DebugTag( "Thread %u fetching", thread->id );
-
-	Q_UNUSED( longestTask );
 
 	ThreadQueue& threadQueue = threadQueues[TLM.id];
 	uint8        current     = threadQueue.current;

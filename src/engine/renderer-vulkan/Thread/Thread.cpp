@@ -81,7 +81,7 @@ void Thread::Run() {
 
 		Timer fetching;
 		if ( !task ) {
-			task = taskList.FetchTask( this, true );
+			task = taskList.FetchTask( this );
 			fetching.Stop();
 		}
 

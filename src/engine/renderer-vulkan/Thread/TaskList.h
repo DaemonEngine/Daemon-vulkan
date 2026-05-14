@@ -58,6 +58,11 @@ struct TaskInitList {
 	const T* start;
 	const T* end;
 
+	TaskInitList() :
+		start( nullptr ),
+		end( nullptr ) {
+	}
+
 	TaskInitList( const T* newStart, const T* newEnd ) :
 		start( newStart ),
 		end( newEnd ) {
@@ -122,7 +127,7 @@ class TaskList :
 
 	void  AddTask( Task& task, std::initializer_list<TaskProxy> dependencies = {} );
 	void  AddTasksExt( std::initializer_list<TaskInit> dependencies );
-	Task* FetchTask( Thread* thread, const bool longestTask );
+	Task* FetchTask( Thread* thread );
 
 	void  TaskWait( Task& task );
 
@@ -166,7 +171,7 @@ class TaskList :
 	void  ResolveDependencies( Task& task, TaskInitList<T>& dependencies );
 
 	template<IsTask T>
-	void  AddTask( Task& task, TaskInitList<T>&& dependencies = {} );
+	void  AddTaskExt( Task& task, TaskInitList<T>&& dependencies );
 
 	template<IsTask T>
 	void  MarkDependencies( Task& task, TaskInitList<T>&& dependencies );

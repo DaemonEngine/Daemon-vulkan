@@ -128,14 +128,14 @@ struct Task {
 	uint16             bufferID               = UNALLOCATED; // Task RingBuffer id
 	uint32             gen                    = 0;
 
-	uint32             argsMap                = 0; // bits 0-7: destructor map, 8-31: arg id -> dataOffsets remap
+	uint32             argsMap                = 0; // Bits 0-7: destructor map, 8-31: arg id -> dataOffsets remap
 
 	uint64             time                   = 0;
 	uint64             threadMask             = 0;
 
 	AccessLock         forwardTaskLock;
-	uint8              id                     = 0; // task memory/dependency tracking in TaskList
-	std::atomic<uint8> dependencyCounter      = 1;
+	uint8              id                     = 0; // Task memory/dependency tracking in TaskList
+	std::atomic<uint8> dependencyCounter      = 1; // Starts at 1 so it wouldn't start executing before being resolved in AddTask[s]
 	std::atomic<uint8> forwardTaskCounter     = 0;
 
 	FenceBool          complete;
