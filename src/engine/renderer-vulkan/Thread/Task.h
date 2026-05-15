@@ -323,16 +323,6 @@ struct Task {
 
 	void   SetValid( const bool valid );
 
-	template<typename T>
-	byte*  CopyAligned( byte* memory, const T& value ) {
-		const uint64 alignment = sizeof( T ) > 8 ? 8 : sizeof( T );
-
-		memory                 = ( byte* ) PAD( ( uint64 ) memory, alignment );
-		*( ( T* ) memory )     = value;
-
-		return memory + sizeof( T );
-	}
-
 	template<class ... T>
 	void   CopyArgs( byte* memory, const T& ... args ) {
 		( [&] {
