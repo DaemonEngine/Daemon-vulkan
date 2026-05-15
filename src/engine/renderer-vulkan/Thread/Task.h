@@ -118,7 +118,7 @@ using TaskFunction8 = void( * )( void*, void*, void*, void*, void*, void*, void*
 //char[] = "ALongTaskNameToBeSure?";
 
 struct Task {
-	static constexpr uint32 maxArgCount      = 4;
+	static constexpr uint32 maxArgCount      = 8;
 	static constexpr uint32 maxArgSize       = 3072;
 	static constexpr uint32 maxTotalArgSize  = maxArgCount * maxArgSize;
 
@@ -305,8 +305,6 @@ struct Task {
 	byte*  GetArgMemory( const uint32 arg );
 
 	private:
-	static constexpr uint32 maxArgs         = 8;
-
 	static constexpr uint32 validOffset     = 0;
 	static constexpr uint32 activeOffset    = 1;
 	static constexpr uint32 shutdownOffset  = 2;

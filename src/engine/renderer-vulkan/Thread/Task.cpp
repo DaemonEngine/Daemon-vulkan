@@ -212,7 +212,7 @@ void Task::operator=( const Task& other ) {
 
 	forwardTaskLock    = other.forwardTaskLock;
 
-	memcpy( dataOffsets,  other.dataOffsets,  maxArgs         * sizeof( uint16 ) );
+	memcpy( dataOffsets,  other.dataOffsets,  maxArgCount     * sizeof( uint16 ) );
 	memcpy( forwardTasks, other.forwardTasks, maxForwardTasks * sizeof( uint16 ) );
 
 	argsMap            = other.argsMap;
