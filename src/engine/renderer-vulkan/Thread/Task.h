@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "../Math/Bit.h"
 
 #include "../Memory/Array.h"
+#include "../Memory/Memory.h"
 #include "../Sys/MemoryInfo.h"
 #include "../Sync/Fence.h"
 #include "../Sync/AccessLock.h"
