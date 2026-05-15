@@ -113,15 +113,15 @@ void Task::ExecuteDestructors() {
 }
 
 bool Task::IsValid() {
-	return BitSet( flags,  validOffset );
+	return BitSet(  flags,  validOffset );
 }
 
 bool Task::IsActive() {
-	return BitSet( flags,  activeOffset );
+	return BitSet(  flags,  activeOffset );
 }
 
 bool Task::IsShutdownTask() {
-	return BitSet( flags,  shutdownOffset );
+	return BitSet(  flags,  shutdownOffset );
 }
 
 uint8 Task::GetArgCount() {
@@ -129,11 +129,19 @@ uint8 Task::GetArgCount() {
 }
 
 void Task::SetValid(  const bool valid ) {
-	valid ?  SetBit( &flags, validOffset )  : UnSetBit( &flags, validOffset );
+	valid  ? SetBit( &flags, validOffset )  : UnSetBit( &flags, validOffset );
 }
 
 void Task::SetActive( const bool active ) {
 	active ? SetBit( &flags, activeOffset ) : UnSetBit( &flags, activeOffset );
+}
+
+uint32 Task::RemapArg( const uint32 arg ) {
+	return GetBits( argsMap, arg * argMapArgSize + argMapArgOffset, argMapArgSize );
+}
+
+uint64 Task::GetDataOffset() {
+	return SetBits( ( uint64 ) dataOffset, ( uint64 ) dataOffset2, 32, 8 );
 }
 
 uint32 Task::SetArgsMap( Arg* start, Arg* end ) {
@@ -155,14 +163,6 @@ uint32 Task::SetArgsMap( Arg* start, Arg* end ) {
 	SetBits( &flags, end - start, argCountOffset, 3 );
 
 	return CountBits( argsMap ) * sizeof( DestructorFunction ) + PAD( size, 8 );
-}
-
-uint32 Task::RemapArg( const uint32 arg ) {
-	return GetBits( argsMap, arg * argMapArgSize + argMapArgOffset, argMapArgSize );
-}
-
-uint64 Task::GetDataOffset() {
-	return SetBits( ( uint64 ) dataOffset, ( uint64 ) dataOffset2, 32, 8 );
 }
 
 byte* Task::InitMemory( Arg* start, Arg* end ) {
