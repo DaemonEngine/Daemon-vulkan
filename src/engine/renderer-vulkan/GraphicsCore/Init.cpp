@@ -89,9 +89,8 @@ void InitGraphicsEngine() {
 
 	InitCmdPools();
 
-	Task      initExecCmdTask { &InitExecCmdPools };
-
-	Task      initCmdTask     { &InitCmdPools };
+	Task initExecCmdTask { &InitExecCmdPools };
+	Task initCmdTask     { &InitCmdPools };
 
 	taskList.AddTasks( { initExecCmdTask.ThreadMaskAllOthers() }, { initCmdTask.ThreadMaskAllOthers() } );
 
