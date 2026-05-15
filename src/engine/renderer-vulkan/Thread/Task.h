@@ -152,7 +152,7 @@ struct Task {
 	static constexpr uint32 maxForwardTasks   = 8;
 	uint16 forwardTasks[maxForwardTasks]        { 0 };
 
-	static constexpr uint32 maxSrcSize = 24;
+	static constexpr uint32 maxSrcSize  = 24;
 	static constexpr uint32 maxNameSize = 24;
 
 	char               src[maxSrcSize];
