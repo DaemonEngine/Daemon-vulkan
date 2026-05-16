@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "GlobalMemory.h"
 #include "ThreadUplink.h"
 #include "EventQueue.h"
+#include "TaskData.h"
 
 #include "TaskList.h"
 
@@ -574,4 +575,8 @@ bool TaskList::ThreadFinished( const bool hadTask ) {
 	}
 
 	return false;
+}
+
+byte* AllocTaskData( const uint16 dataSize, uint64* offset ) {
+	return taskList.AllocTaskData( dataSize, offset );
 }
