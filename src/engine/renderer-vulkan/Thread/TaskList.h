@@ -47,23 +47,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using TaskInit = std::initializer_list<TaskProxy>;
 #define AddTasks( ... ) AddTasksExt( { __VA_ARGS__ } )
 
-template<typename T>
-concept IsTask = requires ( T value ) {
-	{ std::is_convertible<T, Task>::value || std::is_convertible<T, TaskProxy>::value };
-};
-
 // Use this for task dependencies because it allows natvis visualisation
-template<IsTask T>
 struct TaskInitList {
-	const T* start;
-	const T* end;
+	const TaskProxy* start;
+	const TaskProxy* end;
 
 	TaskInitList() :
 		start( nullptr ),
 		end( nullptr ) {
 	}
 
-	TaskInitList( const T* newStart, const T* newEnd ) :
+	TaskInitList( const TaskProxy* newStart, const TaskProxy* newEnd ) :
 		start( newStart ),
 		end( newEnd ) {
 	}
@@ -167,17 +161,12 @@ class TaskList :
 
 	Task* GetTaskMemory( Task& task );
 
-	template<IsTask T>
-	void  ResolveDependencies( Task& task, TaskInitList<T>& dependencies );
+	void  ResolveDependencies( Task& task, TaskInitList& dependencies );
 
-	template<IsTask T>
-	void  AddTaskExt( Task& task, TaskInitList<T>&& dependencies );
+	void  AddTaskExt( Task& task, TaskInitList&& dependencies = {} );
 
-	template<IsTask T>
-	void  MarkDependencies( Task& task, TaskInitList<T>&& dependencies );
-
-	template<IsTask T>
-	void  UnMarkDependencies( TaskInitList<T>&& dependencies );
+	void  MarkDependencies( Task& task, TaskInitList&& dependencies );
+	void  UnMarkDependencies( TaskInitList&& dependencies );
 };
 
 extern TaskList taskList;
