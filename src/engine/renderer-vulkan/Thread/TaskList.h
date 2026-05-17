@@ -61,6 +61,11 @@ struct TaskInitList {
 		start( newStart ),
 		end( newEnd ) {
 	}
+
+	TaskInitList( std::initializer_list<TaskProxy> list ) :
+		start( list.begin() ),
+		end( list.end() ) {
+	}
 };
 
 struct ThreadQueue {
@@ -120,7 +125,7 @@ class TaskList :
 	byte* GetTaskData( const uint64 offset );
 
 	void  AddTask( Task& task, std::initializer_list<TaskProxy> dependencies = {} );
-	void  AddTasksExt( std::initializer_list<TaskInit> dependencies );
+	void  AddTasksExt( std::initializer_list<TaskInitList> dependencies );
 	Task* FetchTask( Thread* thread );
 
 	void  TaskWait( Task& task );
