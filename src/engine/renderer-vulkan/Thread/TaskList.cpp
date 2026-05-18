@@ -417,6 +417,11 @@ void TaskList::MarkDependencies( Task& task, TaskInitList&& dependencies ) {
 		return;
 	}
 
+	if ( !dependencies.start ) {
+		mainTask->dependencyCounter.store( 0, std::memory_order_relaxed );
+		return;
+	}
+
 	for ( const TaskProxy* dep = dependencies.start; dep < dependencies.end; dep++ ) {
 		if ( AddedToTaskList( dep->task.id ) ) {
 			continue;
