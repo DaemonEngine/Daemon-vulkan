@@ -56,7 +56,7 @@ Allows either specifying a custom name for an object, or otherwise automatically
 std::string Tag::Tagged( const std::string& message, const bool useThreadID,
 	const std::source_location& loc ) {
 	const std::string threadID = useThreadID ?
-		( TLM.id == ThreadMemory::MAIN_ID ? "main" : Str::Format( "Thread %u:", TLM.id ) )
+		( TLM.main ? "main" : Str::Format( "Thread %u:", TLM.id ) )
 		: "";
 
 	switch ( e_logExtendedFunctionNames.Get() ) {
