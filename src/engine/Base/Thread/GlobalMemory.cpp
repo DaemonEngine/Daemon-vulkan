@@ -154,6 +154,7 @@ byte* GlobalMemory::Alloc( const uint64 size, const uint64 alignment ) {
 }
 
 void GlobalMemory::Free( byte* memory ) {
+	return;
 	GlobalAllocationRecord* record = ( GlobalAllocationRecord* ) ( memory - sizeof( GlobalAllocationRecord ) );
 
 	if ( record->guardValue != GlobalAllocationRecord::HEADER_MAGIC ) {
