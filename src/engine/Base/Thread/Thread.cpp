@@ -267,6 +267,8 @@ void Thread::Run() {
 	total.Stop();
 }
 
+#include "engine/renderer-vulkan/GraphicsCore/Init.h"
+
 void Thread::Exit() {
 	baseThread.join();
 
@@ -290,7 +292,8 @@ void Thread::Exit() {
 		FormatTime( taskAdd, ms ), FormatTime( taskSync, ms ) );
 
 	for ( const std::pair<TaskFunction, TaskTime>& taskTime : taskTimes ) {
-		Log::NoticeTag( "task: avg: %s, count: %u, time: %u",
+		Log::NoticeTag( "task: %s avg: %s, count: %u, time: %u",
+			taskTime.first == ( TaskFunction ) &TestTask ? "TestTask" : "",
 			FormatTime( taskTime.second.time / maxCoreFrequencyScale / std::max( 1ull, taskTime.second.count ), us ),
 			taskTime.second.count, FormatTime( taskTime.second.time / maxCoreFrequencyScale, us ) );
 	}

@@ -32,5 +32,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define GRAPHICS_INIT_H
 
 void InitGraphicsEngine();
+void TestTask();
 
 #endif // GRAPHICS_INIT_H
