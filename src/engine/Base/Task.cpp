@@ -34,12 +34,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Task.h"
 
-void AddTasksExt( std::initializer_list<TaskInitList>&& dependencies ) {
+void AddTasksExt( const TaskProxy& dependencies ) {
 	taskList.AddTasksExt( dependencies );
 }
 
 Task::Task( const TaskProxy& other ) {
-	bufferID = other.task.bufferID;
+	bufferID = other->bufferID;
 }
 
 Task::Task( Task&& other ) {
@@ -110,29 +110,28 @@ Task::ArgOffsets Task::InitMemory( Arg* start, Arg* end, TaskFunction execute ) 
 }
 
 TaskProxy::TaskProxy( Task& newTask ) :
-	task( newTask ) {}
+	task( &newTask ),
+	depsStart( nullptr ),
+	depsEnd( nullptr ) {
+}
+
+TaskProxy::TaskProxy( Task& newTask, std::initializer_list<TaskProxy> deps ) :
+	task( &newTask ),
+	depsStart( deps.begin() ),
+	depsEnd( deps.end() ) {}
+
+TaskProxy::TaskProxy( std::initializer_list<TaskProxy> deps ) :
+	task( deps.begin()->task ),
+	depsStart( deps.size() == 1 ? deps.begin()->depsStart : deps.begin() + 1 ),
+	depsEnd(   deps.size() == 1 ? deps.begin()->depsEnd   : deps.end() ) {
+}
 
 Task* TaskProxy::operator->() const {
-	return &task;
+	return task;
 }
 
 TaskEnv& TaskProxy::GetEnv()  const {
-	return task.GetEnv();
-}
-
-TaskInitList::TaskInitList() :
-	taskStart( nullptr ),
-	taskEnd( nullptr ) {
-}
-
-TaskInitList::TaskInitList( const TaskProxy* newStart, const TaskProxy* newEnd ) :
-	taskStart( newStart ),
-	taskEnd( newEnd ) {
-}
-
-TaskInitList::TaskInitList( std::initializer_list<TaskProxy> list ) :
-	taskStart( list.begin() ),
-	taskEnd( list.end() ) {
+	return task->GetEnv();
 }
 
 TaskEnv& TaskID::GetEnv() const {

@@ -92,8 +92,7 @@ class TaskList :
 	byte*    AllocTaskData( const uint16 dataSize, uint64* offset );
 	byte*    GetTaskData( const uint64 offset );
 
-	void     AddTask( Task& task, TaskInitList dependencies = {} );
-	void     AddTasksExt( std::initializer_list<TaskInitList> dependencies );
+	void     AddTasksExt( const TaskProxy& dependencies );
 	TaskEnv* FetchTask();
 
 	TaskEnv* GetTaskEnv( Task* task );
@@ -116,11 +115,9 @@ class TaskList :
 	static constexpr uint32 dataPerTask                   = 128;
 	static constexpr uint32 maxThreadTaskData             = maxThreadTasks * dataPerTask;
 
-	static constexpr uint16 taskAddedOffset               = 0;
-	static constexpr uint16 taskHasUntrackedDepsOffset    = 1;
-	static constexpr uint16 taskIsTrackedDependencyOffset = 2;
-	static constexpr uint16 taskDepsProcessedOffset       = 3;
-	static constexpr uint16 taskAllocatedOffset           = 4;
+	static constexpr uint16 taskAllocatedOffset           = 0;
+	static constexpr uint16 taskAddedOffset               = 1;
+	static constexpr uint16 taskDepsProcessedOffset       = 2;
 
 	uint64                            coreMask;
 
@@ -146,18 +143,14 @@ class TaskList :
 
 	bool     AddedToTaskList( const uint8 id );
 	bool     AddedToTaskMemory( const uint8 id );
-	bool     HasUntrackedDeps( const uint8 id );
-	bool     IsTrackedDependency( const uint8 id );
 	bool     IsUpdatedDependency( const uint8 id );
 
 	void     AddToThreadQueue( const Task& task, ThreadRunTime* runTime );
 
-	void     ResolveDependencies( TaskEnv& task, const TaskInitList& dependencies );
+	void     AddTaskExt( Task& task, ThreadRunTime* runTime );
 
-	void     AddTaskExt( Task& task, ThreadRunTime* runTime, const TaskInitList& dependencies = {} );
-
-	void     MarkDependencies( TaskEnv& task, const TaskInitList& dependencies );
-	void     UnMarkDependencies( const TaskInitList& dependencies );
+	void     MarkDependencies( const TaskProxy& dependencies );
+	void     UnMarkDependencies( const TaskProxy& dependencies );
 
 	void     ThreadInitialised();
 };

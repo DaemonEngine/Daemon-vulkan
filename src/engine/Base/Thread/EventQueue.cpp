@@ -64,7 +64,7 @@ void EventRing::Rotate() {
 		uint64* sector = &allocatedEvents[( currentSector + count ) & sectorMask];
 
 		for ( uint32 eventID = FindLSB( *sector ); eventID != 64; eventID = FindLSB( *sector ) ) {
-			taskList.AddTask( events[( currentSector + count ) & sectorMask][eventID] );
+			AddTasks( events[( currentSector + count ) & sectorMask][eventID] );
 			UnSetBit( sector, eventID );
 		}
 

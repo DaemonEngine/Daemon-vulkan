@@ -291,27 +291,23 @@ struct Task {
 };
 
 struct TaskProxy {
-	Task& task;
+	Task*            task;
+	const TaskProxy* depsStart;
+	const TaskProxy* depsEnd;
 
 	         TaskProxy( Task& newTask );
+			 TaskProxy( Task& newTask, std::initializer_list<TaskProxy> deps );
+			 TaskProxy( std::initializer_list<TaskProxy> deps );
+
 	Task*    operator->() const;
 	TaskEnv& GetEnv()     const;
-};
-
-struct TaskInitList {
-	const TaskProxy* taskStart;
-	const TaskProxy* taskEnd;
-
-	TaskInitList();
-	TaskInitList( const TaskProxy* newStart, const TaskProxy* newEnd );
-	TaskInitList( std::initializer_list<TaskProxy> list );
 
 	constexpr IteratorSeq<const TaskProxy> begin() const {
-		return IteratorSeq<const TaskProxy> { taskStart };
+		return IteratorSeq<const TaskProxy> { depsStart };
 	}
 
 	constexpr IteratorSeq<const TaskProxy> end()   const {
-		return IteratorSeq<const TaskProxy> { taskEnd };
+		return IteratorSeq<const TaskProxy> { depsEnd };
 	}
 };
 
@@ -323,7 +319,7 @@ struct TaskID {
 	TaskEnv& GetEnv() const;
 };
 
-void AddTasksExt( std::initializer_list<TaskInitList>&& dependencies );
+void AddTasksExt( const TaskProxy& dependencies );
 
 #define AddTasks( ... ) AddTasksExt( { __VA_ARGS__ } )
 

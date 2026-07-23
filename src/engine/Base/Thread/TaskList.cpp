@@ -144,14 +144,6 @@ bool  TaskList::AddedToTaskMemory( const uint8 id ) {
 	return BitSet( id, taskAllocatedOffset );
 }
 
-bool  TaskList::HasUntrackedDeps( const uint8 id ) {
-	return BitSet( id, taskHasUntrackedDepsOffset );
-}
-
-bool  TaskList::IsTrackedDependency( const uint8 id ) {
-	return BitSet( id, taskIsTrackedDependencyOffset );
-}
-
 bool  TaskList::IsUpdatedDependency( const uint8 id ) {
 	return BitSet( id, taskDepsProcessedOffset );
 }
@@ -210,38 +202,6 @@ void TaskList::FinishTask( TaskEnv* task ) {
 	threadRunTime += runTime;
 
 	task->SetActive( false );
-}
-
-void TaskList::ResolveDependencies( TaskEnv& task, const TaskInitList& dependencies ) {
-	for ( const Task& dep : dependencies ) {
-		if ( IsTrackedDependency( dep.GetEnv().id ) ) {
-			continue;
-		}
-
-		TaskEnv& dependency  = BufferIDToTask( task.bufferID );
-
-		// The dependency has already been executed, but the ringbuffer wrapped around
-		if ( dependency.gen > dep.GetEnv().gen ) {
-			continue;
-		}
-
-		if ( !dependency.threadCount.Lock() ) {
-			continue;
-		}
-
-		uint32 id = dependency.forwardTaskCounter;
-
-		ASSERT_LE( id, TaskEnv::maxForwardTasks );
-
-		dependency.forwardTasks[id] = task.bufferID;
-		dependency.forwardTaskCounter++;
-
-		task.dependencyCounter.fetch_add( 1, std::memory_order_relaxed );
-
-		if ( dependency.threadCount.Unlock() ) {
-			taskList.FinishTask( &dependency );
-		}
-	}
 }
 
 void ThreadQueue::AddTask( const uint32 threadID, const TaskID& task ) {
@@ -386,7 +346,7 @@ void AtomicThreadRunTime::operator+=( const ThreadRunTime& other ) {
 	}
 }
 
-void TaskList::AddTaskExt( Task& task, ThreadRunTime* runTime, const TaskInitList& dependencies ) {
+void TaskList::AddTaskExt( Task& task, ThreadRunTime* runTime ) {
 	TaskEnv& env = task.GetEnv();
 
 	if ( TLM.shutdown && !env.IsShutdownTask() ) {
@@ -412,18 +372,7 @@ void TaskList::AddTaskExt( Task& task, ThreadRunTime* runTime, const TaskInitLis
 		}
 	}
 
-	if ( HasUntrackedDeps( env.id ) ) {
-		ResolveDependencies( env, dependencies );
-
-		const uint32 counter = env.dependencyCounter.fetch_sub( 1, std::memory_order_relaxed ) - 1;
-
-		if ( !counter ) {
-			AddToThreadQueue( task, runTime );
-			SetBit( &env.id, taskAddedOffset );
-		} else {
-			taskWithDependenciesCount.fetch_add( 1, std::memory_order_relaxed );
-		}
-	} else if ( !env.dependencyCounter ) {
+	if ( !env.dependencyCounter ) {
 		AddToThreadQueue( task, runTime );
 		SetBit( &env.id, taskAddedOffset );
 	}
@@ -431,21 +380,55 @@ void TaskList::AddTaskExt( Task& task, ThreadRunTime* runTime, const TaskInitLis
 	TLM.addTimer.Stop();
 }
 
-void TaskList::MarkDependencies( TaskEnv& task, const TaskInitList& dependencies ) {
+void TaskList::MarkDependencies( const TaskProxy& dependencies ) {
 	uint8 dependencyCounter = 0;
 
-	if ( IsUpdatedDependency( task.id ) ) {
+	if ( !dependencies.task ) {
+		for ( const TaskProxy& dep : dependencies ) {
+			MarkDependencies( dep );
+		}
+
 		return;
 	}
 
-	if ( !dependencies.taskStart || dependencies.taskStart == dependencies.taskEnd ) {
-		task.dependencyCounter.store( 0, std::memory_order_relaxed );
+	Task&    task    = *dependencies.task;
+	TaskEnv& mainEnv = task.GetEnv();
+
+	if ( IsUpdatedDependency( mainEnv.id ) ) {
 		return;
 	}
 
-	for ( const Task& dep : dependencies ) {
+	if ( !dependencies.depsStart ) {
+		mainEnv.dependencyCounter.store( 0, std::memory_order_relaxed );
+		return;
+	}
+
+	for ( const TaskProxy& dep : dependencies ) {
 		if ( AddedToTaskList( dep.GetEnv().id ) ) {
+			TaskEnv& env = BufferIDToTask( task.bufferID );
+
+			if ( !env.threadCount.Lock() ) {
+				continue;
+			}
+
+			uint32 id = env.forwardTaskCounter;
+
+			ASSERT_LE( id, TaskEnv::maxForwardTasks );
+
+			env.forwardTasks[id] = task.bufferID;
+			env.forwardTaskCounter++;
+
+			mainEnv.dependencyCounter.fetch_add( 1, std::memory_order_relaxed );
+
+			if ( env.threadCount.Unlock() ) {
+				taskList.FinishTask( &env );
+			}
+
 			continue;
+		}
+
+		if ( dep.depsStart ) {
+			MarkDependencies( dep );
 		}
 
 		TaskEnv& env = dep.GetEnv();
@@ -453,74 +436,48 @@ void TaskList::MarkDependencies( TaskEnv& task, const TaskInitList& dependencies
 		env.forwardTasks[env.forwardTaskCounter] = task.bufferID;
 		env.forwardTaskCounter++;
 
-		SetBit( &env.id, taskIsTrackedDependencyOffset );
-
 		dependencyCounter++;
 	}
 
-	if ( dependencyCounter != ( dependencies.taskEnd - dependencies.taskStart ) ) {
-		SetBit( &task.id, taskHasUntrackedDepsOffset );
+	mainEnv.dependencyCounter.fetch_add( dependencyCounter - 1, std::memory_order_relaxed );
 
-		task.dependencyCounter.fetch_add( dependencyCounter,     std::memory_order_relaxed );
-	} else {
-		task.dependencyCounter.fetch_add( dependencyCounter - 1, std::memory_order_relaxed );
-	}
-
-	SetBit( &task.id, taskDepsProcessedOffset );
+	SetBit( &mainEnv.id, taskDepsProcessedOffset );
 }
 
-void TaskList::UnMarkDependencies( const TaskInitList& dependencies ) {
-	for ( const Task& dep : dependencies ) {
-		UnSetBit( &dep.GetEnv().id, taskIsTrackedDependencyOffset);
-		UnSetBit( &dep.GetEnv().id, taskDepsProcessedOffset );
+void TaskList::UnMarkDependencies( const TaskProxy& dependencies) {
+	for ( const TaskProxy& dep : dependencies ) {
+		UnMarkDependencies( dep );
+	}
+
+	if ( dependencies.task ) {
+		UnSetBit( &dependencies.task->GetEnv().id, taskDepsProcessedOffset );
 	}
 }
 
-void TaskList::AddTask( Task& task, TaskInitList dependencies ) {
-	MarkDependencies( task.GetEnv(), dependencies );
-
+void TaskList::AddTasksExt( const TaskProxy& dependencies ) {
+	// TODO: Currently this is an O( 3 * n ) loop. The tasks form a DAG, which we can instead flatten in O( n ), then loop in O( n )
+	MarkDependencies( dependencies );
+	
 	ThreadRunTime runTime     = threadRunTime;
 	ThreadRunTime baseRunTime = runTime;
 
-	AddTaskExt( task, &runTime, dependencies );
+	if ( dependencies.task ) {
+		TaskEnv& env = dependencies->GetEnv();
 
-	for ( const TaskProxy& dep : dependencies ) {
-		AddTaskExt( dep.task, &runTime );
+		if ( !IsUpdatedDependency( env.id ) && !AddedToTaskList( env.id ) ) {
+			env.dependencyCounter.store( 0, std::memory_order_relaxed );
+		}
+
+		AddTaskExt( *dependencies.task, &runTime );
+	}
+
+	for ( const TaskProxy& depList : dependencies ) {
+		AddTasksExt( depList );
 	}
 
 	threadRunTime += runTime - baseRunTime;
 
 	UnMarkDependencies( dependencies );
-}
-
-void TaskList::AddTasksExt( std::initializer_list<TaskInitList> dependencies ) {
-	// TODO: Currently this is an O( 3 * n ) loop. The tasks form a DAG, which we can instead flatten in O( n ), then loop in O( n )
-	for ( const TaskInitList& taskInit : dependencies ) {
-		MarkDependencies( taskInit.taskStart->GetEnv(), { taskInit.taskStart + 1, taskInit.taskEnd } );
-	}
-	
-	ThreadRunTime runTime     = threadRunTime;
-	ThreadRunTime baseRunTime = runTime;
-
-	for ( const TaskInitList& taskInit : dependencies ) {
-		for ( const TaskProxy* task = taskInit.taskStart + 1; task < taskInit.taskEnd; task++ ) {
-			TaskEnv& env = task->GetEnv();
-
-			if ( !IsUpdatedDependency( env.id ) && !AddedToTaskList( env.id ) ) {
-				env.dependencyCounter.store( 0, std::memory_order_relaxed );
-			}
-
-			AddTaskExt( task->task, &runTime );
-		}
-
-		AddTaskExt( taskInit.taskStart->task, &runTime, { taskInit.taskStart + 1, taskInit.taskEnd } );
-	}
-
-	threadRunTime += runTime - baseRunTime;
-
-	for ( const TaskInitList& taskInit : dependencies ) {
-		UnMarkDependencies( { taskInit.taskStart + 1, taskInit.taskEnd } );
-	}
 }
 
 TaskEnv* TaskList::FetchTask() {
