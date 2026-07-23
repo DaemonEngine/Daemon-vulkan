@@ -130,7 +130,6 @@ class AtomicRingBufferArray :
 
 			while ( memory[element + threadID * size].IsActive() ) {
 				std::this_thread::yield();
-
 			}
 
 			memory[element + threadID * size].SetActive( true );
