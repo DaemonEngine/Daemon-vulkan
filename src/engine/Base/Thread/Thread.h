@@ -66,7 +66,7 @@ class Thread :
 
 	uint64      runTime;
 
-	Task*       task;
+	TaskEnv*       task;
 
 	bool        running = true;
 	bool        exiting = false;

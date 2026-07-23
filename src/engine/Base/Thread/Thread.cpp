@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Core.h"
 #include "EventQueue.h"
 #include "GlobalMemory.h"
+#include "TaskEnv.h"
 #include "TaskList.h"
 #include "ThreadMemory.h"
 #include "Barrier.h"
@@ -132,9 +133,14 @@ void Thread::Run() {
 			eventQueue.Rotate();
 		}
 
-		task = TLM.FetchTask();
+		TaskID localTask = TLM.FetchTask();
+
+		if ( localTask.bufferID != TaskID::idNone ) {
+			task = &localTask.GetEnv();
+		}
 
 		Timer fetching;
+
 		if ( !task ) {
 			task = taskList.FetchTask();
 			fetching.Stop();

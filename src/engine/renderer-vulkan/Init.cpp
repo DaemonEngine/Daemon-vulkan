@@ -89,7 +89,7 @@ void Init( WindowConfig* windowConfig ) {
 	Task initSMTask  { &InitGlobalMemory };
 
 	Task initTLMTask { &InitTLM };
-	taskList.AddTasks( { initSMTask, initMemTask }, { initTLMTask.ThreadMaskAll(), initMemTask } );
+	AddTasks( { initSMTask, initMemTask }, { initTLMTask.ThreadMaskAll(), initMemTask } );
 
 	mainSurface.Init();
 
@@ -109,7 +109,7 @@ void Init( WindowConfig* windowConfig ) {
 
 	Task initGraphicsEngineTask { &InitGraphicsEngine };
 
-	taskList.AddTasks( { initGraphicsEngineTask } );
+	AddTasks( { initGraphicsEngineTask } );
 
 	std::this_thread::sleep_for( std::chrono::microseconds( 3000000 ) );
 
@@ -157,7 +157,7 @@ void Init( WindowConfig* windowConfig ) {
 	Timer tTimer;
 
 	cntFence.target = 40;
-	taskList.AddTasks( { t }, { t2 }, { t3 }, { t4 }, { t5 }, { t6 }, { t7 }, { t8 }, { t9 }, { t10 }, { t11 }, { t12 }, { t13 }, { t14 },
+	AddTasks( { t }, { t2 }, { t3 }, { t4 }, { t5 }, { t6 }, { t7 }, { t8 }, { t9 }, { t10 }, { t11 }, { t12 }, { t13 }, { t14 },
 		{ t15 }, { t16 }, { t17 }, { t18 }, { t19 }, { t20 },
 		{ ta }, { t2a }, { t3a }, { t4a }, { t5a }, { t6a }, { t7a }, { t8a }, { t9a }, { t10a }, { t11a }, { t12a }, { t13a }, { t14a },
 		{ t15a }, { t16a }, { t17a }, { t18a }, { t19a }, { t20a } );
