@@ -75,6 +75,9 @@ struct MemoryArea {
 
 struct PageAllocator :
 	public Allocator {
+	static constexpr uint32 MIN_PAGE_SIZE = 16384;
+	static constexpr uint32 MAX_PAGE_SIZE = UINT32_MAX;
+
 	void    Init( const std::string& configText );
 	void    Shutdown();
 

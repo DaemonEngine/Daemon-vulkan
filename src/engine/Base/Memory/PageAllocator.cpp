@@ -78,7 +78,23 @@ void PageAllocator::Init( const std::string& configText ) {
 		o = Parse( v );
 		Q_strtoi( o.memory, &pageSize );
 
+		if ( threadAreaCount <= 0 || threadAreaCount >= 64 ) {
+			Log::Warn( "Bad threadAreaCount: %u, must be in (0, 63]", threadAreaCount );
+			threadAreaCount = 64;
+		}
+
+		if ( pageCount <= 0 || pageCount >= 64 ) {
+			Log::Warn( "Bad pageCount: %u, must be in (0, 63]", pageCount );
+			pageCount = 64;
+		}
+
 		pageSize       *= 1024;
+
+		if ( pageSize < MIN_PAGE_SIZE || pageSize > MAX_PAGE_SIZE ) {
+			Log::Warn( "Bad pageSize: %u, must be in [%u, 63]", pageSize );
+			pageSize = MIN_PAGE_SIZE;
+		}
+
 		threadAreaCount = threadAreaCount ? threadAreaCount : CPU_CORES;
 
 		uint32 size     = pageSize * pageCount * threadAreaCount;
