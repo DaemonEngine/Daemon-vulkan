@@ -246,6 +246,8 @@ void TaskList::AddToThreadQueue( const Task& task, ThreadRunTime* runTime ) {
 	if ( env.threadMask ) {
 		uint32 threadMask = env.threadMask;
 
+		env.threadCount.value.store( CountBits( env.threadMask ), std::memory_order_relaxed );
+
 		taskCount.fetch_add( CountBits( threadMask ), std::memory_order_relaxed );
 
 		while ( threadMask ) {
@@ -268,6 +270,8 @@ void TaskList::AddToThreadQueue( const Task& task, ThreadRunTime* runTime ) {
 		uint16       extra      = env.count - packetSize * coreCount;
 		uint16       base       = 0;
 
+		env.threadCount.value.store( coreCount, std::memory_order_relaxed );
+
 		for ( uint8 i = 0; i < coreCount; i++ ) {
 			const uint16 threadPacketSize = packetSize + ( extra ? 1 : 0 );
 
@@ -286,6 +290,8 @@ void TaskList::AddToThreadQueue( const Task& task, ThreadRunTime* runTime ) {
 
 		return;
 	}
+
+	env.threadCount.value.store( 1, std::memory_order_relaxed );
 
 	if ( projectedTime < TLM.addToQueueTimer.Time() / TLM.addToQueueCount && !TLM.main ) {
 		threadQueues[TLM.id].AddTask( TLM.id, { task.bufferID } );
@@ -383,9 +389,8 @@ void TaskList::AddTaskExt( Task& task, ThreadRunTime* runTime ) {
 
 	TLM.addTimer.Start();
 
-	env.threadCount.value.store( env.threadMask ? CountBits( env.threadMask ) : 1, std::memory_order_relaxed );
-
 	uint64 time = TimeNs();
+
 	if ( time < env.time && env.time - time > eventQueue.minGranularity ) {
 		if ( eventQueue.AddTask( std::move( task ) ) ) {
 			return;
