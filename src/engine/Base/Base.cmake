@@ -14,9 +14,8 @@ set( memoryList
     ${engineBase}/Memory/IteratorSeq.h
     ${engineBase}/Memory/Memory.cpp
     ${engineBase}/Memory/Memory.h
-    ${engineBase}/Memory/MemoryChunk.h
-    ${engineBase}/Memory/MemoryChunkSystem.cpp
-    ${engineBase}/Memory/MemoryChunkSystem.h
+    ${engineBase}/Memory/PageAllocator.cpp
+    ${engineBase}/Memory/PageAllocator.h
     ${engineBase}/Memory/RingBuffer.h
     ${engineBase}/Memory/RingBufferArray.h
     ${engineBase}/Memory/StackAllocator.cpp
@@ -79,8 +78,6 @@ set( threadList
     ${engineBase}/Thread/ThreadMemory.h
     ${engineBase}/Thread/ThreadUplink.cpp
     ${engineBase}/Thread/ThreadUplink.h
-    ${engineBase}/Thread/TLMAllocator.cpp
-    ${engineBase}/Thread/TLMAllocator.h
 )
 
 set( engineBaseList
@@ -95,6 +92,8 @@ set( engineBaseList
     ${engineBase}/BaseDecls.h
     ${engineBase}/Error.cpp
     ${engineBase}/Error.h
+    ${engineBase}/Init.cpp
+    ${engineBase}/Init.h
     ${engineBase}/Int.h
     ${engineBase}/Parser.cpp
     ${engineBase}/Parser.h

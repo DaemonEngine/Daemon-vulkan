@@ -35,10 +35,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Sync/AlignedAtomic.h"
 #include "Sys/CPUInfo.h"
 #include "Thread/ThreadCommon.h"
-#include "Thread/TLMAllocator.h"
 #include "Int.h"
 
 #include "Allocator.h"
+#include "PageAllocator.h"
 
 template<typename T, const bool useTrailingAtomic = false>
 class AtomicRingBufferArray :
@@ -51,11 +51,11 @@ class AtomicRingBufferArray :
 	uint64     mask;
 	uint64     size; // Per thread
 
-	AtomicRingBufferArray( Allocator* newAllocator = &TLMAlloc ) :
+	AtomicRingBufferArray( Allocator* newAllocator = &pageAllocator ) :
 		allocator( newAllocator ) {
 	}
 
-	AtomicRingBufferArray( const std::string name, Allocator* newAllocator = &TLMAlloc ) :
+	AtomicRingBufferArray( const std::string name, Allocator* newAllocator = &pageAllocator ) :
 		Tag( name ),
 		allocator( newAllocator ) {
 	}

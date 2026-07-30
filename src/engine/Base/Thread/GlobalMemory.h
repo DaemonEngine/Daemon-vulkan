@@ -32,59 +32,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define GLOBAL_MEMORY_H
 
 #include <unordered_map>
-#include <atomic>
+
+#include "AccessLock.h"
 
 #include "Int.h"
-#include "Allocator.h"
-#include "DynamicArray.h"
-#include "MemoryChunk.h"
-#include "SysAllocator.h"
-
 #include "Task.h"
-
-struct GlobalAllocationRecord {
-	static constexpr uint64 HEADER_MAGIC = 0xACC0500D66666666;
-	static constexpr uint32 srcSize      = 227;
-
-	std::string Format() const;
-
-	void operator=( const GlobalAllocationRecord& other );
-
-	uint64              guardValue = HEADER_MAGIC;
-	uint64              size;
-	uint32              alignment;
-	uint32              chunkID; // LSB->MSB: 0-5 - chunk, 6-26 - area, 27-31 - level, 31 - allocated
-
-	std::atomic<uint32> refCount;
-
-	char                source[srcSize + 1];
-};
 
 struct GlobalTaskTime {
 	std::atomic<uint64> count = 0;
 	std::atomic<uint64> time = 0;
 };
 
-class GlobalMemory : public Allocator {
+class GlobalMemory {
 	public:
-	DynamicArray<ChunkAllocator> chunkAllocators[MAX_MEMORY_AREAS] { { &sysAllocator }, { &sysAllocator }, { &sysAllocator } };
-
 	std::unordered_map<TaskFunction, GlobalTaskTime> taskTimes;
 	AccessLock                                       taskTimesLock;
-
-	void         Init();
-
-	byte*        Alloc( const uint64 size, const uint64 alignment );
-	void         Free( byte* memory );
-
-	private:
-	ChunkRecord* IDToChunkRecord( const uint8 level, const uint8 area, const uint8 chunk );
-	ChunkRecord* IDToChunkRecord( const uint32 id );
-
-	uint32       AllocChunk( const uint64 size, const uint64 alignment, const uint8 level );
 };
-
-void InitGlobalMemory();
 
 extern GlobalMemory SM;
 

@@ -28,18 +28,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#include "common/Common.h"
 #include "qcommon/qcommon.h"
-
-#include "engine/framework/CvarSystem.h"
-#include "engine/framework/System.h"
 
 #include "Thread/GlobalMemory.h"
 #include "Thread/TaskList.h"
 #include "Thread/ThreadMemory.h"
 #include "Sys/OSLoad.h"
 #include "BaseCVars.h"
-#include "MemoryChunkSystem.h"
+#include "PageAllocator.h"
 #include "SysAllocator.h"
  
 #include "../RefAPI.h"
@@ -49,24 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "GraphicsCore/Init.h"
 #include "GraphicsCore/GraphicsCoreStore.h"
 
-static void InitTLM() {
-	TLM.Init();
-}
-
 void Init( WindowConfig* windowConfig ) {
-	OSLoad();
-
-	sysAllocator.Init();
-	taskList.Init();
-
-	std::string cfg = e_memoryChunkConfig.Get();
-
-	Task initMemTask { &InitMemoryChunkSystemConfig, cfg };
-	Task initSMTask  { &InitGlobalMemory };
-
-	Task initTLMTask { &InitTLM };
-	AddTasks( { initSMTask, initMemTask }, { initTLMTask.ThreadMaskAll(), initMemTask } );
-
 	mainSurface.Init();
 
 	windowConfig->displayWidth  = mainSurface.width;
@@ -76,12 +55,6 @@ void Init( WindowConfig* windowConfig ) {
 	windowConfig->vidHeight     = mainSurface.screenHeight;
 
 	IN_Init( mainSurface.window );
-
-	initTLMTask.Wait();
-
-	Log::Notice( "Large page size: %u", memoryInfo.PAGE_SIZE_LARGE );
-
-	Cvar::Latch( e_memoryPageSize );
 
 	Task initGraphicsEngineTask { &InitGraphicsEngine };
 

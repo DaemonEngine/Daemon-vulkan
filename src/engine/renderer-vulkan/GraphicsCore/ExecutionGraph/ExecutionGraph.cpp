@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Sys/MemoryInfo.h"
 #include "Bit.h"
 #include "DynamicArray.h"
+#include "PageAllocator.h"
 #include "Parser.h"
 #include "Task.h"
 
@@ -52,7 +53,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ExecutionGraph.h"
 
-DynamicArray<Buffer> buffers { &SM };
+DynamicArray<Buffer> buffers;
 
 static void ExecPushConstNode( PushConstNode* node, VkCommandBuffer cmd, VkPipelineLayout pipelineLayout, uint32 SPIRVID ) {
 	uint64 data[8];

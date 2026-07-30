@@ -33,9 +33,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Decls.h"
 
-#include "Thread/GlobalMemory.h"
 #include "Int.h"
 #include "DynamicArray.h"
+#include "PageAllocator.h"
 
 #include "GraphicsResource.h"
 #include "Image.h"
@@ -56,8 +56,8 @@ struct SwapChain : public GraphicsResource {
 
 	uint32         imageCount;
 
-	DynamicArray<Image>       images { &SM };
-	DynamicArray<VkSemaphore> presentSemaphores { &SM };
+	DynamicArray<Image>       images;
+	DynamicArray<VkSemaphore> presentSemaphores;
 
 	void Init( const VkInstance instance );
 	void Free() override;

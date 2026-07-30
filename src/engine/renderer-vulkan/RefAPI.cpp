@@ -39,8 +39,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Surface/Surface.h"
 #include "GraphicsCore/GraphicsCoreCVars.h"
 #include "GraphicsCore/GraphicsCoreStore.h"
+#include "GraphicsCore/Init.h"
 
 #include "Init.h"
+#include "PageAllocator.h"
 
 #include "../RefAPI.h"
 
@@ -57,16 +59,20 @@ static Cvar::Cvar<int> r_height( "r_height", "height", Cvar::NONE, 0 );
 namespace TempAPI {
 	void Shutdown( bool destroyWindow ) {
 		Q_UNUSED( destroyWindow );
-
-		taskList.Shutdown();
-		taskList.FinishShutdown();
 	}
 
 	bool BeginRegistration( WindowConfig* windowConfig ) {
-		TLM.main = true;
-		TLM.id   = ThreadMemory::MAIN_ID;
+		mainSurface.Init();
 
-		Init( windowConfig );
+		windowConfig->displayWidth  = mainSurface.width;
+		windowConfig->displayHeight = mainSurface.height;
+		windowConfig->displayAspect = ( float ) windowConfig->displayWidth / windowConfig->displayHeight;
+		windowConfig->vidWidth      = mainSurface.screenWidth;
+		windowConfig->vidHeight     = mainSurface.screenHeight;
+
+		IN_Init( mainSurface.window );
+
+		AddTasks( { Task { &InitGraphicsEngine } } );
 
 		return true;
 	}

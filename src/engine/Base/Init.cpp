@@ -28,17 +28,35 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef TLM_ALLOCATOR_H
-#define TLM_ALLOCATOR_H
+#include "engine/framework/CvarSystem.h"
 
-#include "Int.h"
-#include "Allocator.h"
+#include "Thread/TaskList.h"
+#include "Thread/ThreadMemory.h"
+#include "Sys/OSLoad.h"
+#include "BaseCVars.h"
+#include "PageAllocator.h"
+#include "SysAllocator.h"
 
-struct TLMAllocator : public Allocator {
-	byte* Alloc( const uint64 size, const uint64 alignment ) override;
-	void  Free( byte* memory ) override;
-};
+#include "Init.h"
 
-extern thread_local TLMAllocator TLMAlloc;
+void BaseInit() {
+	TLM.main = true;
+	TLM.id   = ThreadMemory::MAIN_ID;
 
-#endif // TLM_ALLOCATOR_H
+	OSLoad();
+
+	sysAllocator.Init();
+	pageAllocator.Init( e_pageConfig.Get() );
+	taskList.Init();
+
+	Log::Notice( "Large page size: %u", memoryInfo.PAGE_SIZE_LARGE );
+
+	Cvar::Latch( e_memoryPageSize );
+}
+
+void BaseShutdown() {
+	taskList.Shutdown();
+	taskList.FinishShutdown();
+
+	pageAllocator.Shutdown();
+}

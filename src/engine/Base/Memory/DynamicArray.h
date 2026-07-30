@@ -34,10 +34,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <type_traits>
 
 #include "SrcDebug/Tag.h"
-#include "Thread/TLMAllocator.h"
 #include "Int.h"
 
 #include "IteratorSeq.h"
+#include "PageAllocator.h"
 
 template<typename T>
 class DynamicArray :
@@ -51,16 +51,16 @@ class DynamicArray :
 
 	Allocator* allocator;
 
-	DynamicArray( Allocator* newAllocator = &TLMAlloc ) :
+	DynamicArray( Allocator* newAllocator = &pageAllocator ) :
 		allocator( newAllocator ) {
 	}
 
-	DynamicArray( const std::string name, Allocator* newAllocator = &TLMAlloc ) :
+	DynamicArray( const std::string name, Allocator* newAllocator = &pageAllocator ) :
 		Tag( name ),
 		allocator( newAllocator ) {
 	}
 
-	DynamicArray( std::initializer_list<T> args, Allocator* newAllocator = &TLMAlloc ) :
+	DynamicArray( std::initializer_list<T> args, Allocator* newAllocator = &pageAllocator ) :
 		allocator( newAllocator ) {
 		Resize( args.size() );
 		highestID = size;
@@ -70,7 +70,7 @@ class DynamicArray :
 		}
 	}
 
-	DynamicArray( const std::string name, std::initializer_list<T> args, Allocator* newAllocator = &TLMAlloc ) :
+	DynamicArray( const std::string name, std::initializer_list<T> args, Allocator* newAllocator = &pageAllocator ) :
 		Tag( name ),
 		allocator( newAllocator ) {
 		Resize( args.size() );

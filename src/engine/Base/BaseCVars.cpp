@@ -30,7 +30,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Sys/CPUInfo.h"
 #include "Thread/TaskList.h"
-#include "MemoryChunk.h"
 
 #include "BaseCVars.h"
 
@@ -47,9 +46,9 @@ Cvar::Callback<Cvar::Range<Cvar::Cvar<uint64>>> e_threadMask( "e_threadMask", "T
 		taskList.SetActiveThreads( value );
 	}, 1, UINT64_MAX );
 
-Cvar::Cvar<std::string>      e_memoryChunkConfig( "e_memoryChunkConfig",
-	"Configuration for memory chunk system: \"[chunkSize]:[chunkCount] .. [chunkSize]:[chunkCount]\", sizes are in kb."
-	"16:640 1024:640 65536:16 must be reserved for internal use", Cvar::NONE, defaultMemoryChunkConfig );
+Cvar::Cvar<std::string>      e_pageConfig( "e_pageConfig",
+	"PageAllocator config: \"[threadAreaCount]:[areaPages][pageSize] ...\", sizes are in kb.",
+	Cvar::NONE, "0:16:16 0:16:2048 16:1:65536" );
 
 Cvar::Range<Cvar::Cvar<int>> e_memoryPageSize( "e_memoryPageSize",
 	Str::Format( "Memory page size to use (0: default, 1: %u, 2: %u)", memoryInfo.PAGE_SIZE_64, memoryInfo.PAGE_SIZE_LARGE ),

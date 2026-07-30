@@ -31,14 +31,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef STACK_ALLOCATOR_H
 #define STACK_ALLOCATOR_H
 
-#include "Thread/TLMAllocator.h"
 #include "Int.h"
 
 #include "Allocator.h"
 
 class StackAllocator : public Allocator {
 	public:
-	StackAllocator( Allocator* newAllocator = &TLMAlloc );
+	StackAllocator( Allocator* newAllocator );
 	~StackAllocator() = default;
 
 	void Init( const uint64_t newSize );

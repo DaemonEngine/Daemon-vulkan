@@ -32,22 +32,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define RINGBUFFER_H
 
 #include "SrcDebug/Tag.h"
-#include "Thread/TLMAllocator.h"
 #include "Int.h"
 #include "Timer.h"
 
 #include "Allocator.h"
+#include "PageAllocator.h"
 
 template<typename T>
 class RingBuffer :
 	public Tag {
 
 	public:
-	RingBuffer( Allocator* newAllocator = &TLMAlloc ) :
+	RingBuffer( Allocator* newAllocator = &pageAllocator ) :
 		allocator( newAllocator ) {
 	}
 
-	RingBuffer( const std::string name, Allocator* newAllocator = &TLMAlloc ) :
+	RingBuffer( const std::string name, Allocator* newAllocator = &pageAllocator ) :
 		Tag( name ),
 		allocator( newAllocator ) {
 	}
@@ -120,11 +120,11 @@ class AtomicRingBuffer :
 	Timer      getTimer;
 	Timer      addTimer;
 
-	AtomicRingBuffer( Allocator* newAllocator = &TLMAlloc ) :
+	AtomicRingBuffer( Allocator* newAllocator = &pageAllocator ) :
 		allocator( newAllocator ) {
 	}
 
-	AtomicRingBuffer( const std::string name, Allocator* newAllocator = &TLMAlloc ) :
+	AtomicRingBuffer( const std::string name, Allocator* newAllocator = &pageAllocator ) :
 		Tag( name ),
 		allocator( newAllocator ) {
 	}

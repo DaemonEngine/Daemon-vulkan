@@ -28,66 +28,75 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#ifndef MEMORY_CHUNK_H
-#define MEMORY_CHUNK_H
+#ifndef PAGE_ALLOCATOR_H
+#define PAGE_ALLOCATOR_H
 
-#include "Sync/AccessLock.h"
 #include "Int.h"
-#include "BaseDecls.h"
 
-struct MemoryChunk {
-	uint8  level;
-	uint8  area;
-	uint8  chunk;
-	bool   allocated;
+#include "Allocator.h"
+
+struct AllocRecord {
+	static constexpr uint64 HEADER_MAGIC = 0xACC0500D66666666;
+	static constexpr uint32 srcSize      = 238;
+
+	std::string Format() const;
+
+	uint64 guardValue = HEADER_MAGIC;
+	uint32 size;
+	uint16 alignment;
+	uint8  memoryArea;
+	uint8  threadArea;
+	uint8  pageID;
+
+	char   source[srcSize + 1];
 };
 
-struct MemoryAreaConfig {
-	uint64 chunkSize;
-	uint32 chunks;
-	uint32 chunkAreas;
+struct PageRecord {
+	uint32 allocSize;
+	uint16 allocCount;
+};
+
+struct ThreadArea {
+	std::atomic<uint64> allocated;
+	std::atomic<uint32> allocCount;
+	std::atomic<uint32> freeCount;
+	uint32              thisThreadAllocCount;
+	uint32              thisThreadFreeCount;
+	uint64              pad[5];
 };
 
 struct MemoryArea {
-	MemoryAreaConfig     config;
-
-	byte*                memory;
-	AlignedAtomicUint64* chunkLocks; // 1 - locked
+	byte*  memory;
+	uint32 pageSize;
+	uint16 threadAreaOffset;
+	uint8  threadAreaCount;
+	uint8  threadAreaPageCount;
 };
 
-struct ChunkRecord {
-	uint32 offset;
-	uint32 allocs;
+struct PageAllocator :
+	public Allocator {
+	void    Init( const std::string& configText );
+	void    Shutdown();
+
+	byte*   Alloc( const uint64 size, const uint64 alignment ) override;
+	void    Free( byte* memory ) override;
+
+	private:
+	static constexpr uint32 MAX_MEMORY_AREAS = 3;
+
+	MemoryArea  memoryAreas[MAX_MEMORY_AREAS];
+	ThreadArea* threadAreas;
+	PageRecord* pageAllocs;
+	uint64*     acquiredPages;
+	uint32      threadAreaOffset;
+
+	uint64* GetAcqPages( const uint8 threadArea );
+
+	byte*   AllocFromPage( const MemoryArea& memoryArea, const uint8 thread, const uint8 pageID,
+		                   const uint32 size, const uint16 alignment );
+	byte*   AllocFromAcquiredPage( const MemoryArea& memoryArea, const uint32 size, const uint16 alignment );
 };
 
-struct ChunkAllocator {
-	uint64      allocatedChunks;
-	uint64      availableChunks;
-	ChunkRecord chunks[64];
-	AccessLock  accessLock;
-};
+extern PageAllocator pageAllocator;
 
-constexpr uint32 MAX_MEMORY_AREAS = 3;
-
-struct MemoryChunkConfig {
-	MemoryAreaConfig areas[MAX_MEMORY_AREAS];
-};
-
-constexpr uint64 memoryChunkConfigRequired[][2] {
-	{ 16 * 1024, 640 }, { 1024 * 1024, 640 }, { 64 * 1024 * 1024, 16 }
-};
-
-constexpr const char* defaultMemoryChunkConfig = "16:640 1024:640 65536:16";
-
-constexpr uint32 chunkBits        = 6;
-constexpr uint32 chunkAreaBits    = 21;
-constexpr uint32 chunkLevelBits   = 4;
-
-constexpr uint32 chunkAreaOffset  = chunkBits;
-constexpr uint32 chunkLevelOffset = chunkAreaOffset  + chunkAreaBits;
-constexpr uint32 chunkAllocOffset = chunkLevelOffset + chunkLevelBits;
-
-uint32      MemoryChunkToID( const uint8 level, const uint8 area, const uint8 chunk );
-MemoryChunk IDToMemoryChunk( const uint32 id );
-
-#endif // MEMORY_CHUNK_H
+#endif // PAGE_ALLOCATOR_H

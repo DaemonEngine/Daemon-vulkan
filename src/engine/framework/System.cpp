@@ -54,6 +54,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/file.h>
 #endif
 
+#include "../Base/Init.h"
+
 #if defined(DAEMON_USE_FLOAT_EXCEPTIONS)
 	#if defined(__USE_GNU) || defined(__FreeBSD__) || defined(_WIN32)
 		#if defined(DAEMON_ARCH_amd64) || defined(DAEMON_ARCH_i686)
@@ -507,6 +509,8 @@ static void SetFloatingPointExceptions()
 // TODO: Handle shutdown requests coming from multiple threads (could happen from the *nix signal thread)
 static void Shutdown(bool error, Str::StringRef message)
 {
+	BaseShutdown();
+
 	FS::FlushAll();
 
 	// Stop accepting commands from other instances
@@ -831,6 +835,8 @@ static void SetCvarsWithInitFlag(cmdlineArgs_t& cmdlineArgs)
 static void Init(int argc, char** argv)
 {
 	cmdlineArgs_t cmdlineArgs;
+
+	BaseInit();
 
 #ifdef _WIN32
 	// Detect MSYS2 terminal. The AttachConsole code makes output not appear

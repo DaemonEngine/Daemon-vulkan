@@ -154,7 +154,7 @@ void Thread::Run() {
 			taskFetchNone++;
 		}
 
-		if ( fetched && TLM.initialised ) {
+		if ( fetched ) {
 			actual.Start();
 			fetchIdleTimer.Start();
 		}
@@ -242,9 +242,6 @@ void Thread::Run() {
 		}
 
 		task    = nullptr;
-
-		TLM.FreeAllChunks();
-
 		exiting = taskList.ThreadFinished( true );
 	}
 

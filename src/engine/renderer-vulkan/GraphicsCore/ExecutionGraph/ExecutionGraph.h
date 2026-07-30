@@ -35,7 +35,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <initializer_list>
 #include <unordered_map>
 
-#include "Thread/GlobalMemory.h"
 #include "BitStream.h"
 #include "AccessLock.h"
 
@@ -239,7 +238,7 @@ class ExecutionGraph {
 	VkSemaphore                      acquireSemaphore = nullptr;
 	PresentNode                      presentNode        { .active = false };
 
-	DynamicArray<ExecutionGraphNode> processedNodes     { &SM };
+	DynamicArray<ExecutionGraphNode> processedNodes;
 
 	std::atomic<uint64>              cmdID            = 0;
 

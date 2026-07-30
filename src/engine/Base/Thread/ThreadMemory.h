@@ -34,30 +34,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <thread>
 
 #include "Int.h"
-#include "Allocator.h"
-#include "DynamicArray.h"
-#include "MemoryChunk.h"
-#include "SysAllocator.h"
 #include "Task.h"
 #include "Timer.h"
 
 #include "TaskID.h"
 #include "ThreadCommon.h"
-#include "TLMAllocator.h"
-
-struct AllocationRecord {
-	static constexpr uint64 HEADER_MAGIC = 0xACC0500D66666666;
-	static constexpr uint32 srcSize      = 231;
-
-	std::string Format() const;
-
-	uint64 guardValue = HEADER_MAGIC;
-	uint64 size;
-	uint32 alignment;
-	uint32 chunkID;
-
-	char   source[srcSize + 1];
-};
 
 struct TaskTime {
 	uint64 count        = 0;
@@ -65,7 +46,7 @@ struct TaskTime {
 	bool   syncedWithSM = false;
 };
 
-class ThreadMemory : public Allocator {
+class ThreadMemory {
 	public:
 	static constexpr uint32 MAIN_ID = MAX_THREADS;
 	uint32      id;
@@ -73,10 +54,7 @@ class ThreadMemory : public Allocator {
 	static constexpr uint32 maxInternalTasks = 64;
 
 	bool        main              = false;
-	bool        initialised       = false;
 	bool        shutdown          = false;
-
-	DynamicArray<ChunkAllocator> chunkAllocators[MAX_MEMORY_AREAS] { { &sysAllocator }, { &sysAllocator }, { &sysAllocator } };
 
 	uint64      activeThreadMask  = 0;
 	uint32      currentMaxThreads = 0;
@@ -101,25 +79,8 @@ class ThreadMemory : public Allocator {
 
 	GlobalTimer exitTimer;
 
-	             ~ThreadMemory();
-
-	void         Init();
-
-	byte*        Alloc( const uint64 size, const uint64 alignment ) override;
-	void         Free( byte* memory ) override;
-
-	void         FreeAllChunks();
-
 	void         AddTask( const TaskID& task );
 	TaskID       FetchTask();
-
-	private:
-	ChunkRecord* IDToChunkRecord( const uint8 level, const uint8 area, const uint8 chunk );
-	ChunkRecord* IDToChunkRecord( const uint32 id );
-
-	uint32       AllocChunk( const uint64 size, const uint64 alignment, const uint8 level );
-
-	void         PrintChunkInfo( ChunkRecord* memoryChunk, const uint8 level, const byte* memory );
 };
 
 extern thread_local ThreadMemory TLM;

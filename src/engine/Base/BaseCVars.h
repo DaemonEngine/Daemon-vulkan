@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 extern Cvar::Callback<Cvar::Range<Cvar::Cvar<int>>> e_threadCount;
 
-extern Cvar::Cvar<std::string>                      e_memoryChunkConfig;
+extern Cvar::Cvar<std::string>                      e_pageConfig;
 
 extern Cvar::Range<Cvar::Cvar<int>>                 e_memoryPageSize;
 

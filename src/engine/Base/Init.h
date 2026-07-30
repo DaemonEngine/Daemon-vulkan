@@ -28,16 +28,5 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 =============================================================================
 */
 
-#include "ThreadMemory.h"
-
-#include "TLMAllocator.h"
-
-thread_local TLMAllocator TLMAlloc;
-
-byte* TLMAllocator::Alloc( const uint64 size, const uint64 alignment ) {
-	return TLM.Alloc( size, alignment );
-}
-
-void TLMAllocator::Free( byte* memory ) {
-	TLM.Free( memory );
-}
+void BaseInit();
+void BaseShutdown();
