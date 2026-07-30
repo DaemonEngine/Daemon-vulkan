@@ -177,29 +177,35 @@ void Thread::Run() {
 		Timer t;
 		executing.Start();
 
-		for ( TLM.taskInvocationID = localTask.base; TLM.taskInvocationID < localTask.count + localTask.base; TLM.taskInvocationID++ ) {
-			switch ( task->GetArgCount() ) {
-				case 4:
-					( ( TaskFunction4 ) task->Execute )( task->GetArgMemory( 0 ), task->GetArgMemory( 1 ), task->GetArgMemory( 2 ),
-						task->GetArgMemory( 3 ) );
-					break;
+		try {
+			for ( TLM.taskInvocationID = localTask.base; TLM.taskInvocationID < localTask.count + localTask.base; TLM.taskInvocationID++ ) {
+				switch ( task->GetArgCount() ) {
+					case 4:
+						( ( TaskFunction4 ) task->Execute )( task->GetArgMemory( 0 ), task->GetArgMemory( 1 ), task->GetArgMemory( 2 ),
+							task->GetArgMemory( 3 ) );
+						break;
 
-				case 3:
-					( ( TaskFunction3 ) task->Execute )( task->GetArgMemory( 0 ), task->GetArgMemory( 1 ), task->GetArgMemory( 2 ) );
-					break;
+					case 3:
+						( ( TaskFunction3 ) task->Execute )( task->GetArgMemory( 0 ), task->GetArgMemory( 1 ), task->GetArgMemory( 2 ) );
+						break;
 
-				case 2:
-					( ( TaskFunction2 ) task->Execute )( task->GetArgMemory( 0 ), task->GetArgMemory( 1 ) );
-					break;
+					case 2:
+						( ( TaskFunction2 ) task->Execute )( task->GetArgMemory( 0 ), task->GetArgMemory( 1 ) );
+						break;
 
-				case 1:
-					task->Execute( task->GetArgMemory( 0 ) );
-					break;
+					case 1:
+						task->Execute( task->GetArgMemory( 0 ) );
+						break;
 
-				case 0:
-					task->Execute( nullptr );
-					break;
+					case 0:
+						task->Execute( nullptr );
+						break;
+				}
 			}
+		} catch ( const std::exception& e ) {
+			Log::Warn( e.what() );
+		} catch ( ... ) {
+			Log::Warn( "Unknown exception" );
 		}
 
 		executing.Stop();
