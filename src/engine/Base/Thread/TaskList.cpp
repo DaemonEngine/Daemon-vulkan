@@ -88,7 +88,6 @@ void TaskList::Init() {
 
 	CPU_CORES = CPU_CORES > 64 ? 64 : CPU_CORES;
 	coreCount = CPU_CORES - 1;
-	coreMask  = BitMask64( 0, coreCount );
 
 	for ( uint32 i = 0; i < CPU_CORES; i++ ) {
 		threads[i].Start( i );
@@ -97,7 +96,7 @@ void TaskList::Init() {
 	threadInitCount.target = CPU_CORES;
 	threadInitCount.Wait();
 
-	SetActiveThreads( coreMask );
+	SetActiveThreads( BitMask64( 0, coreCount ) );
 }
 
 static void ThreadShutdown() {
@@ -168,31 +167,32 @@ void TaskList::UpdateThreadRunTime( const uint64 time ) {
 	threadRunTime.time[TLM.id].fetch_sub( time, std::memory_order_relaxed );
 }
 
-void TaskList::FinishTask( TaskEnv* task ) {
-	task->complete.Signal();
-	task->ExecuteDestructors();
+void TaskList::FinishTask( const TaskID& task ) {
+	TaskEnv& env = task.GetEnv();
 
-	if ( task->GetArgCount() ) {
-		tasksData.UpdateCurrentElement( GetBits( task->bufferID, taskIDThreadOffset, taskIDThreadBits ), task->GetDataOffset() * CACHE_LINE_SIZE );
+	env.complete.Signal();
+	env.ExecuteDestructors();
+
+	if ( env.GetArgCount() ) {
+		tasksData.UpdateCurrentElement( GetBits( task.bufferID, taskIDThreadOffset, taskIDThreadBits ), env.GetDataOffset() * CACHE_LINE_SIZE );
 	}
 
 	ThreadRunTime runTime = threadRunTime;
 
-	for ( uint8 i = 0; i < task->forwardTaskCounter; i++ ) {
-		TaskEnv&     forwardTask = BufferIDToTask( task->forwardTasks[i] );
+	for ( uint8 i = 0; i < env.forwardTaskCounter; i++ ) {
+		Task tmp;
+		tmp.bufferID = env.forwardTasks[i];
 
-		const uint32 counter     = forwardTask.dependencyCounter.fetch_sub( 1, std::memory_order_relaxed ) - 1;
+		SetBit( &tmp.flags, Task::offsetAllocated );
+		SetBit( &tmp.flags, Task::offsetProcessed );
+
+		const uint32 counter = tmp.GetEnv().dependencyCounter.fetch_sub( 1, std::memory_order_relaxed ) - 1;
 
 		if ( counter ) {
 			continue;
 		}
 
 		TLM.addTimer.Start();
-
-		Task tmp;
-		tmp.bufferID = forwardTask.bufferID;
-		SetBit( &tmp.flags, Task::offsetAllocated );
-		SetBit( &tmp.flags, Task::offsetProcessed );
 
 		AddTaskExt( tmp, &runTime );
 		taskWithDependenciesCount.fetch_sub( 1, std::memory_order_relaxed );
@@ -202,7 +202,7 @@ void TaskList::FinishTask( TaskEnv* task ) {
 
 	threadRunTime += runTime;
 
-	task->SetActive( false );
+	env.SetActive( false );
 }
 
 void ThreadQueue::AddTask( const uint32 threadID, const TaskID& task ) {
@@ -318,10 +318,7 @@ TaskEnv* TaskList::InitTaskEnv( Task* task ) {
 	TaskEnv* env   = tasks.GetNextElementMemory( TLM.id );
 	*env           = {};
 
-	env->gen++;
-	env->bufferID  = SetBits( env - ( tasks.memory + TLM.id * tasks.size ), TLM.id, taskIDThreadOffset, taskIDThreadBits );
-
-	task->bufferID = env->bufferID;
+	task->bufferID = SetBits( env - ( tasks.memory + TLM.id * tasks.size ), TLM.id, taskIDThreadOffset, taskIDThreadBits );
 	SetBit( &task->flags, Task::offsetAllocated );
 
 	return env;
@@ -435,7 +432,7 @@ void TaskList::MarkDependencies( const Task& task, const TaskInitList& dependenc
 			mainEnv.dependencyCounter.fetch_add( 1, std::memory_order_relaxed );
 
 			if ( env.threadCount.Unlock() ) {
-				FinishTask( &env );
+				FinishTask( { .bufferID = dep.task->bufferID } );
 			}
 
 			continue;

@@ -107,6 +107,7 @@ void Thread::Run() {
 	threadElectOne( CPU_CORES,
 		{
 			InitCores();
+			
 		}
 	);
 
@@ -210,7 +211,7 @@ void Thread::Run() {
 		dependencyTimer.Start();
 
 		if ( task->threadCount.Unlock() ) {
-			taskList.FinishTask( task );
+			taskList.FinishTask( localTask );
 		}
 
 		dependencyTimer.Stop();

@@ -105,7 +105,7 @@ class TaskList :
 	bool     ThreadFinished( const bool hadTask );
 
 	void     UpdateThreadRunTime( const uint64 time );
-	void     FinishTask( TaskEnv* task );
+	void     FinishTask( const TaskID& task );
 
 	void     SetActiveThreads( const uint64 threadMask );
 
@@ -115,8 +115,6 @@ class TaskList :
 	static constexpr uint32 maxThreadTasks                = 512;
 	static constexpr uint32 dataPerTask                   = 128;
 	static constexpr uint32 maxThreadTaskData             = maxThreadTasks * dataPerTask;
-
-	uint64                            coreMask;
 
 	AccessLock                        threadCountLock;
 

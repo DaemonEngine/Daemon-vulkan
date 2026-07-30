@@ -187,10 +187,6 @@ void TaskEnv::operator=( const TaskEnv& other ) {
 
 	flags              = other.flags;
 
-	bufferID           = other.bufferID;
-
-	gen                = other.gen;
-
 	time               = other.time;
 	threadMask         = other.threadMask;
 

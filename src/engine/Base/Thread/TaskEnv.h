@@ -59,28 +59,24 @@ struct TaskEnv {
 	TaskFunction       Execute;
 
 	uint16             dataOffsets[4]           { 0 };
-	uint16             count                  = 1;
-	uint32             pad                    = 0;
 	// 40 bits for task data so it supports up to ~207 days with 1024 tasks with 64 byte args per frame on average @ 60 FPS
 	uint32             dataOffset             = 0;
 	uint8              dataOffset2            = 0;
+	uint8              pad[11];
 
-	uint8              flags                  = 0;
-
-	uint16             bufferID               = 0; // Task RingBuffer id
-	uint32             gen                    = 0;
-
-	uint32             argsMap                = 0; // Bits 0-7: destructor map, 8-31: arg id -> dataOffsets remap
+	uint16             count                  = 1;
+	uint16             argsMap                = 0; // Bits 0-3: destructor map, 4-15: arg id -> dataOffsets remap
 
 	uint64             time                   = 0;
 	uint64             threadMask             = 0;
 
-	uint8              pad2                   = 0;
 	std::atomic<uint8> dependencyCounter      = 1; // Starts at 1 so it wouldn't start executing before being resolved in AddTask[s]
 	uint8              forwardTaskCounter     = 0;
 
 	FenceBool          complete;
 	AccessLock         threadCount            = {};
+
+	uint8              flags                  = 0;
 
 	uint16             srcLine                = 0;
 
@@ -106,8 +102,6 @@ struct TaskEnv {
 	TaskEnv&           ThreadMaskAllOthers();
 	TaskEnv&           ThreadMaskCurrent();
 
-	void               Wait();
-
 	void               ExecuteDestructors();
 
 	bool               IsShutdownTask();
@@ -127,14 +121,12 @@ struct TaskEnv {
 	static constexpr uint32 shutdownOffset  = 1;
 	static constexpr uint32 argCountOffset  = 2;
 
-	static constexpr uint32 argMapArgOffset = 8;
-	static constexpr uint32 argMapMask      = 255;
+	static constexpr uint32 argMapArgOffset = 4;
+	static constexpr uint32 argMapMask      = 15;
 	static constexpr uint32 argMapArgSize   = 3;
 
 	uint32             SetArgsMap( Arg* start, Arg* end );
 	uint32             RemapArg( const uint32 arg );
-
-	void               SetValid( const bool valid );
 };
 
 #endif // TASK_ENV_H
