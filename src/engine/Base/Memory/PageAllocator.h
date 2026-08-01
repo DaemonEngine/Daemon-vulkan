@@ -32,72 +32,65 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define PAGE_ALLOCATOR_H
 
 #include "Int.h"
+#include "BaseDecls.h"
 
 #include "Allocator.h"
 
-struct AllocRecord {
-	static constexpr uint64 HEADER_MAGIC = 0xACC0500D66666666;
-	static constexpr uint32 srcSize      = 238;
-
-	std::string Format() const;
-
-	uint64 guardValue = HEADER_MAGIC;
-	uint32 size;
-	uint16 alignment;
-	uint8  memoryArea;
-	uint8  threadArea;
-	uint8  pageID;
-
-	char   source[srcSize + 1];
-};
-
-struct PageRecord {
-	uint32 allocSize;
-	uint16 allocCount;
-};
-
-struct ThreadArea {
-	std::atomic<uint64> allocated;
-	std::atomic<uint32> allocCount;
-	std::atomic<uint32> freeCount;
-	uint32              thisThreadAllocCount;
-	uint32              thisThreadFreeCount;
-	uint64              pad[5];
-};
-
-struct MemoryArea {
-	byte*  memory;
-	uint32 pageSize;
-	uint16 threadAreaOffset;
-	uint8  threadAreaCount;
-	uint8  threadAreaPageCount;
-};
-
 struct PageAllocator :
 	public Allocator {
+	static constexpr uint32 MAX_MEMORY_AREAS = 6;
+
 	static constexpr uint32 MIN_PAGE_SIZE = 16384;
 	static constexpr uint32 MAX_PAGE_SIZE = UINT32_MAX;
 
-	void    Init( const std::string& configText );
-	void    Shutdown();
+	void                 Init( const std::string& configText );
+	void                 Shutdown();
 
-	byte*   Alloc( const uint64 size, const uint64 alignment ) override;
-	void    Free( byte* memory ) override;
+	byte*                Alloc( const uint64 size, const uint64 alignment ) override;
+	byte*                AllocShared( const uint64 size, const uint64 alignment ) override;
+	void                 Free( byte* memory ) override;
+
+	void                 FreeSharedPages();
 
 	private:
-	static constexpr uint32 MAX_MEMORY_AREAS = 3;
+	struct AllocRecord;
+	struct PageRecord;
+	struct ThreadArea;
 
-	MemoryArea  memoryAreas[MAX_MEMORY_AREAS];
-	ThreadArea* threadAreas;
-	PageRecord* pageAllocs;
-	uint64*     acquiredPages;
-	uint32      threadAreaOffset;
+	struct MemoryArea {
+		byte*  memory;
+		uint32 pageSize;
+		uint16 threadAreaOffset;
+		uint8  threadAreaCount;
+		uint8  threadAreaPageCount;
+		uint8  id;
+		bool   shared;
+	};
 
-	uint64* GetAcqPages( const uint8 threadArea );
+	MemoryArea           memoryAreas[MAX_MEMORY_AREAS];
+	ThreadArea*          threadAreas;
+	PageRecord*          pageAllocs;
+	AlignedAtomicUint32* sharedPageAllocs;
 
-	byte*   AllocFromPage( const MemoryArea& memoryArea, const uint8 thread, const uint8 pageID,
-		                   const uint32 size, const uint16 alignment );
-	byte*   AllocFromAcquiredPage( const MemoryArea& memoryArea, const uint32 size, const uint16 alignment );
+	uint64*              acquiredPages;
+	AlignedAtomicUint64* freedSharedPages;
+
+	uint32               totalThreadAreas;
+	uint32               acquiredPagesStride;
+	uint32               totalSharedThreadAreas;
+	uint32               totalPageCount;
+	uint32               totalSharedPageCount;
+
+	uint64*              GetAcqPages( const uint8 threadArea );
+	AlignedAtomicUint64* GetFreedSharedPages( const uint8 allocatorThread, const uint8 threadArea );
+
+	byte*                AllocFromPage( const MemoryArea& memoryArea, const uint8 thread, const uint8 pageID,
+		                                const uint32 size, const uint16 alignment );
+	byte*                AllocFromAcquiredPage( const MemoryArea& memoryArea, const uint32 size, const uint16 alignment );
+	
+	byte*                Alloc( const uint64 size, const uint64 alignment, const bool shared );
+
+	void                 ClearPage( const MemoryArea& memoryArea, const uint8 thread, const uint8 pageID );
 };
 
 extern PageAllocator pageAllocator;

@@ -30,3 +30,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Allocator.h"
 
+byte* Allocator::AllocShared( const uint64 size, const uint64 alignment ) {
+	return Alloc( size, alignment );
+};

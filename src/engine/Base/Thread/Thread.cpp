@@ -247,6 +247,8 @@ void Thread::Run() {
 			}
 		}
 
+		pageAllocator.FreeSharedPages();
+
 		task    = nullptr;
 		exiting = taskList.ThreadFinished( true );
 	}

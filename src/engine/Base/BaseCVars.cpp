@@ -47,8 +47,8 @@ Cvar::Callback<Cvar::Range<Cvar::Cvar<uint64>>> e_threadMask( "e_threadMask", "T
 	}, 1, UINT64_MAX );
 
 Cvar::Cvar<std::string>      e_pageConfig( "e_pageConfig",
-	"PageAllocator config: \"[threadAreaCount]:[areaPages][pageSize] ...\", sizes are in kb.",
-	Cvar::NONE, "0:16:16 0:16:2048 16:1:65536" );
+	"PageAllocator config: \"[threadAreaCount]:[areaPages]:[pageSize] ...\", sizes are in kb.",
+	Cvar::NONE, "l:0:16:16 l:0:16:2048 l:16:1:65536 s:0:16:2048" );
 
 Cvar::Range<Cvar::Cvar<int>> e_memoryPageSize( "e_memoryPageSize",
 	Str::Format( "Memory page size to use (0: default, 1: %u, 2: %u)", memoryInfo.PAGE_SIZE_64, memoryInfo.PAGE_SIZE_LARGE ),
