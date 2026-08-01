@@ -111,6 +111,8 @@ bool EventQueue::AddTask( Task&& task ) {
 
 			return false;
 	}
+
+	ASSERT_UNREACHABLE();
 }
 
 void EventQueue::Rotate() {
